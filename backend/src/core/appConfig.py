@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# backend/src/core/config.py
+# backend/src/core/appConfig.py
 #
 # Application Settings — Pydantic Settings + python-dotenv
 #
@@ -12,13 +12,12 @@
 #     In production deployment they can be overridden via env vars.
 #
 # Usage:
-#   from src.core.config import settings
+#   from src.core.appConfig import settings
 #   if settings.is_demo:
 #       return placeholder_result()
 # ─────────────────────────────────────────────────────────────────────────────
 
 from pydantic_settings import BaseSettings
-from pydantic import field_validator
 from typing import Literal, List
 
 

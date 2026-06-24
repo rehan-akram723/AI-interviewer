@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# backend/src/graph/session_state.py
+# backend/src/graph/sessionState.py
 #
 # THE CENTRAL CONTRACT — InterviewSession TypedDict
 #
@@ -19,6 +19,9 @@
 #   Module 3 Output   — multimodal analysis metrics
 #   Module 4 Output   — final report + PDF path
 #   System Fields     — status, error, step audit log
+#
+# Usage:
+#   from src.graph.sessionState import InterviewSession
 # ─────────────────────────────────────────────────────────────────────────────
 
 from typing import TypedDict, List, Optional, Literal
@@ -181,7 +184,7 @@ class InterviewSession(TypedDict):
     pdf_path: Optional[str]
     """
     Filesystem path to the generated PDF report.
-    None until pdf_generator.py completes. Example: ./data/reports/{session_id}.pdf
+    None until pdfGenerator.py completes. Example: ./data/reports/{session_id}.pdf
     """
 
     # ── System Fields ──────────────────────────────────────────────────────────

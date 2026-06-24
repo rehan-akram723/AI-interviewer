@@ -1,7 +1,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# backend/tests/unit/test_session_state.py
+# backend/tests/unit/testSessionState.py
 #
-# Unit tests for backend/src/graph/session_state.py
+# Unit tests for backend/src/graph/sessionState.py
 #
 # Tests verify:
 #   1. InterviewSession TypedDict has all required keys from the manifest
@@ -47,7 +47,7 @@ class TestInterviewSessionStructure:
     }
 
     def _get_all_keys(self) -> set:
-        from src.graph.session_state import InterviewSession
+        from src.graph.sessionState import InterviewSession
         hints = get_type_hints(InterviewSession)
         return set(hints.keys())
 
@@ -96,7 +96,7 @@ class TestInterviewSessionStructure:
     def test_total_key_count(self):
         """Ensures no keys were silently dropped. Update this if manifest adds fields."""
         keys = self._get_all_keys()
-        expected_minimum = (
+        expectedMinimum = (
             len(self.REQUIRED_IDENTITY_KEYS) +
             len(self.REQUIRED_CONFIG_KEYS) +
             len(self.REQUIRED_MODULE1_KEYS) +
@@ -105,7 +105,7 @@ class TestInterviewSessionStructure:
             len(self.REQUIRED_MODULE4_KEYS) +
             len(self.REQUIRED_SYSTEM_KEYS)
         )
-        assert len(keys) >= expected_minimum
+        assert len(keys) >= expectedMinimum
 
 
 class TestMinimalSessionFixture:
@@ -113,48 +113,48 @@ class TestMinimalSessionFixture:
 
     def test_all_typed_dict_keys_in_fixture(self, minimal_session):
         """Every key defined in InterviewSession must exist in the fixture."""
-        from src.graph.session_state import InterviewSession
-        required_keys = set(get_type_hints(InterviewSession).keys())
-        fixture_keys = set(minimal_session.keys())
-        missing = required_keys - fixture_keys
+        from src.graph.sessionState import InterviewSession
+        requiredKeys = set(get_type_hints(InterviewSession).keys())
+        fixtureKeys = set(minimal_session.keys())
+        missing = requiredKeys - fixtureKeys
         assert not missing, f"Fixture is missing these InterviewSession keys: {missing}"
 
     def test_app_mode_is_demo(self, minimal_session):
         assert minimal_session["app_mode"] == "demo"
 
     def test_status_is_valid(self, minimal_session):
-        valid_statuses = {"setting_up", "ready", "in_progress", "completed", "error"}
-        assert minimal_session["status"] in valid_statuses
+        validStatuses = {"setting_up", "ready", "in_progress", "completed", "error"}
+        assert minimal_session["status"] in validStatuses
 
     def test_current_phase_is_valid(self, minimal_session):
-        valid_phases = {"icebreaker", "cv_deep_dive", "dynamic_followup", "closing"}
-        assert minimal_session["current_phase"] in valid_phases
+        validPhases = {"icebreaker", "cv_deep_dive", "dynamic_followup", "closing"}
+        assert minimal_session["current_phase"] in validPhases
 
     def test_interview_length_is_valid(self, minimal_session):
-        valid_lengths = {"short", "medium", "long"}
-        assert minimal_session["interview_length"] in valid_lengths
+        validLengths = {"short", "medium", "long"}
+        assert minimal_session["interview_length"] in validLengths
 
     def test_interview_mode_is_valid(self, minimal_session):
-        valid_modes = {"mixed", "technical", "behavioral", "hr_culture_fit", "system_design"}
-        assert minimal_session["interview_mode"] in valid_modes
+        validModes = {"mixed", "technical", "behavioral", "hr_culture_fit", "system_design"}
+        assert minimal_session["interview_mode"] in validModes
 
     def test_difficulty_dimensions_has_all_keys(self, minimal_session):
         """difficulty_dimensions must track all 5 scoring dimensions."""
         dims = minimal_session["difficulty_dimensions"]
-        required_dims = {"relevance", "clarity", "depth", "confidence", "structure"}
-        assert required_dims.issubset(set(dims.keys()))
+        requiredDims = {"relevance", "clarity", "depth", "confidence", "structure"}
+        assert requiredDims.issubset(set(dims.keys()))
 
     def test_difficulty_level_in_range(self, minimal_session):
         level = minimal_session["difficulty_level"]
         assert 1 <= level <= 5
 
     def test_lists_are_lists(self, minimal_session):
-        list_fields = [
+        listFields = [
             "question_plan", "asked_questions", "answers",
             "coaching_feedback", "audio_metrics_per_answer",
             "transcript", "step_log",
         ]
-        for field in list_fields:
+        for field in listFields:
             assert isinstance(minimal_session[field], list), (
                 f"Field '{field}' must be a list, got {type(minimal_session[field])}"
             )
