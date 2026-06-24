@@ -1,0 +1,24 @@
+# ─── AI Interviewer — Environment Configuration ──────────────────────────────
+# Copy this file to .env and fill in your values.
+# .env is gitignored — never commit it.
+# .envExample is safe to commit — it tracks key names only.
+
+# ── Mode Control ─────────────────────────────────────────────────────────────
+# "demo"       → all paid APIs are bypassed; free OpenRouter LLM still runs
+# "production" → full pipeline with Whisper, ElevenLabs, MediaPipe
+APP_MODE=demo
+
+# ── LLM — OpenRouter ─────────────────────────────────────────────────────────
+OPENROUTER_API_KEY=
+OPENROUTER_MODEL=meta-llama/llama-3.3-70b-instruct:free
+
+# ── TTS — ElevenLabs (production only) ───────────────────────────────────────
+ELEVENLABS_API_KEY=
+ELEVENLABS_VOICE_ID=
+
+# ── STT — Whisper (production only) ──────────────────────────────────────────
+WHISPER_MODEL_SIZE=base
+
+# ── App Settings ─────────────────────────────────────────────────────────────
+APP_NAME=AI Interviewer
+APP_VERSION=2.0.0

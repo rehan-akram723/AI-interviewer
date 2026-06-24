@@ -1,0 +1,51 @@
+# ─── Virtual Environment ────────────────────────────────────────────────────
+env/
+.venv/
+venv/
+
+# ─── Python Cache ────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# ─── Local Data Storage (JSON persistence + PDFs) ────────────────────────────
+backend/data/candidates/
+backend/data/sessions/
+backend/data/reports/
+
+# ─── Environment & Secrets ────────────────────────────────────────────────────
+.env
+*.env.local
+
+# ─── Test & Coverage ─────────────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+*.log
+
+# ─── IDEs ────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ─── OS Artifacts ────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── Frontend ────────────────────────────────────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+
+# ─── Uploads & Temp ──────────────────────────────────────────────────────────
+*.tmp
+uploads/

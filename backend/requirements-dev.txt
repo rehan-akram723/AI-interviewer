@@ -1,0 +1,17 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# backend/requirements-dev.txt — Development & Testing Dependencies
+# Install BOTH: pip install -r requirements.txt -r requirements-dev.txt
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Testing ───────────────────────────────────────────────────────────────────
+pytest==8.3.4
+pytest-asyncio==0.25.0       # async test support
+pytest-cov==6.0.0            # coverage reporting
+httpx==0.28.1                # TestClient for FastAPI (already in requirements.txt)
+
+# ── Mocking ───────────────────────────────────────────────────────────────────
+pytest-mock==3.14.0
+
+# ── Code Quality ──────────────────────────────────────────────────────────────
+ruff==0.8.6                  # Fast linter + formatter
+mypy==1.14.1                 # Static type checking
