@@ -26,6 +26,10 @@ pdfplumber==0.11.4           # PDF text extraction
 # ── Audio Analysis ────────────────────────────────────────────────────────────
 librosa==0.10.2.post1
 soundfile==0.12.1            # Audio I/O backend for librosa
+# openai-whisper             # [PRODUCTION ONLY] STT — install separately:
+#                            #   pip install openai-whisper
+#                            # Requires torch: pip install torch --index-url https://download.pytorch.org/whl/cu121
+#                            # Not pinned here to avoid force-installing GPU torch in demo CI.
 
 # ── PDF Report Generation ─────────────────────────────────────────────────────
 weasyprint==63.1
