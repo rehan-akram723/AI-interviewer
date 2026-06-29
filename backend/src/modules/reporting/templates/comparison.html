@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Progress Comparison Report</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+            @bottom-right {
+                content: "Page " counter(page) " of " counter(pages);
+                font-family: system-ui, sans-serif;
+                font-size: 10pt;
+                color: #666;
+            }
+        }
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #333;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+        h1, h2, h3 {
+            color: #1a1a1a;
+            margin-top: 1.5em;
+        }
+        .header {
+            border-bottom: 2px solid #6f42c1;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28pt;
+            color: #6f42c1;
+        }
+        .delta-positive {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .delta-negative {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .delta-neutral {
+            color: #6c757d;
+        }
+        .overall-delta {
+            text-align: center;
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border: 1px solid #dee2e6;
+        }
+        .overall-delta h2 {
+            margin: 0 0 10px 0;
+        }
+        .score-value {
+            font-size: 36pt;
+            font-weight: bold;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .narrative-box {
+            background-color: #f8f0ff;
+            border-left: 4px solid #6f42c1;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .lists-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .list-card {
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+        }
+        .list-card.good {
+            border-top: 4px solid #28a745;
+        }
+        .list-card.bad {
+            border-top: 4px solid #dc3545;
+        }
+        ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Progress Comparison</h1>
+        <p style="margin: 0; color: #666;">AI Interviewer Cross-Session Analysis</p>
+    </div>
+
+    <div class="overall-delta">
+        <h2>Overall Score Shift</h2>
+        <div class="score-value {% if comparison.overall_score_delta > 0 %}delta-positive{% elif comparison.overall_score_delta < 0 %}delta-negative{% else %}delta-neutral{% endif %}">
+            {% if comparison.overall_score_delta > 0 %}+{% endif %}{{ "%.1f"|format(comparison.overall_score_delta) }} pts
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Comparison Narrative</h2>
+        <div class="narrative-box">
+            {{ comparison.comparison_narrative }}
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Dimension Shifts</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Dimension</th>
+                    <th>Score Delta</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for dim_name, delta in comparison.dimension_deltas.items() %}
+                <tr>
+                    <td style="text-transform: capitalize;">{{ dim_name | replace('_', ' ') }}</td>
+                    <td class="{% if delta > 0 %}delta-positive{% elif delta < 0 %}delta-negative{% else %}delta-neutral{% endif %}">
+                        {% if delta > 0 %}+{% endif %}{{ "%.1f"|format(delta) }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section lists-container">
+        <div class="list-card good">
+            <h3>Strengths Improved</h3>
+            <ul>
+                {% for item in comparison.strengths_improved %}
+                    <li>{{ item }}</li>
+                {% else %}
+                    <li style="color: #666;">No major positive shifts detected.</li>
+                {% endfor %}
+            </ul>
+        </div>
+        
+        <div class="list-card bad">
+            <h3>Regressions Detected</h3>
+            <ul>
+                {% for item in comparison.regressions_detected %}
+                    <li>{{ item }}</li>
+                {% else %}
+                    <li style="color: #666;">No regressions detected. Excellent!</li>
+                {% endfor %}
+            </ul>
+        </div>
+        
+        <div class="list-card good" style="grid-column: span 2;">
+            <h3>Prior Weaknesses Addressed</h3>
+            <ul>
+                {% for item in comparison.weaknesses_improved %}
+                    <li>{{ item }}</li>
+                {% else %}
+                    <li style="color: #666;">No prior weaknesses fully resolved in this session.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+</body>
+</html>
