@@ -7,7 +7,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import React, { useState, useEffect } from 'react';
-import { getReport, getReportPdfUrl } from '../../services/api';
+import { getReport, generateReport, getReportPdfUrl } from '../../services/api';
 
 // Dimension display configuration — human labels for camelCase schema keys
 const DIMENSION_CONFIG = {
@@ -58,27 +58,56 @@ const ReportViewer = ({ sessionId }) => {
     const [report, setReport] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [generationStatus, setGenerationStatus] = useState('Fetching report...');
 
     useEffect(() => {
-        const fetchReport = async () => {
+        let intervalId;
+        const fetchOrGenerate = async () => {
             try {
                 setLoading(true);
-                const data = await getReport(sessionId);
-                setReport(data);
+                // Trigger generation
+                setGenerationStatus('Triggering report generation...');
+                await generateReport(sessionId);
+
+                setGenerationStatus('Generating report (this may take up to 30 seconds)...');
+                
+                const poll = async () => {
+                    try {
+                        const data = await getReport(sessionId);
+                        setReport(data);
+                        setLoading(false);
+                        clearInterval(intervalId);
+                    } catch (err) {
+                        if (err.response?.status === 404) {
+                            setGenerationStatus('Still generating report... please wait...');
+                        } else {
+                            throw err;
+                        }
+                    }
+                };
+
+                intervalId = setInterval(poll, 3000);
+                poll(); // initial check
+
             } catch (err) {
-                console.error('[ReportViewer] Failed to load report:', err);
+                console.error('[ReportViewer] Failed to load/generate report:', err);
                 setError('Could not load the interview report. Please try again.');
-            } finally {
                 setLoading(false);
+                if (intervalId) clearInterval(intervalId);
             }
         };
-        if (sessionId) fetchReport();
+        if (sessionId) fetchOrGenerate();
+
+        return () => {
+            if (intervalId) clearInterval(intervalId);
+        };
     }, [sessionId]);
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center py-20">
+            <div className="flex flex-col justify-center items-center py-20 gap-4">
                 <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600" />
+                <p className="text-gray-600 font-medium">{generationStatus}</p>
             </div>
         );
     }

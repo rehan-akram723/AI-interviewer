@@ -30,10 +30,10 @@ from src.modules.interviewEngine.flowController import (
 def makeState(
     index: int = 0,
     length: str = "medium",
-    questionPlan: list = None,
-    answers: list = None,
-    askedQuestions: list = None,
-    coachingFeedback: list = None,
+    questionPlan: list | None = None,
+    answers: list | None = None,
+    askedQuestions: list | None = None,
+    coachingFeedback: list | None = None,
 ) -> dict:
     return {
         "current_question_index": index,

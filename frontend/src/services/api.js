@@ -67,6 +67,14 @@ export const getReport = async (sessionId) => {
 };
 
 /**
+ * Triggers the background generation of the report for a completed session.
+ */
+export const generateReport = async (sessionId) => {
+    const response = await apiClient.post(`/sessions/${sessionId}/report/generate`);
+    return response.data;
+};
+
+/**
  * Triggers a ProgressComparison between two sessionIds.
  * Returns the full ProgressComparison object (deltas + narrative).
  */

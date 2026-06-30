@@ -35,6 +35,7 @@ from typing import Optional
 
 from src.core.llmClient import callLlm
 from src.schemas.interviewSchema import CoachingFeedback
+from src.api.websockets.interviewWs import pushToClientSync
 
 logger = logging.getLogger(__name__)
 
@@ -264,7 +265,16 @@ def liveCoachAgent(state: dict) -> dict:
             improvements=list(rawOutput.get("improvements", []))[:3],
             dimension_scores=sanitisedDims,
         )
-        coachingFeedback.append(feedback.model_dump())
+        feedback_dict = feedback.model_dump()
+        coachingFeedback.append(feedback_dict)
+
+        # Push to client immediately
+        sessionId = state.get("session_id")
+        if sessionId:
+            pushToClientSync(
+                sessionId,
+                {"type": "coaching_feedback", "payload": feedback_dict}
+            )
 
     except Exception as exc:
         logger.warning("liveCoachAgent: Pydantic validation failed — using fallback. %s", exc)

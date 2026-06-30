@@ -101,13 +101,19 @@ def extractTextFromPdf(pdfBytes: bytes) -> str:
         raise ValueError("pdfBytes must not be empty.")
 
     extractedPages = []
-    with pdfplumber.open(io.BytesIO(pdfBytes)) as pdf:
-        for page in pdf.pages:
-            pageText = page.extract_text()
-            if pageText:
-                extractedPages.append(pageText.strip())
-
-    return "\n\n".join(extractedPages)
+    try:
+        with pdfplumber.open(io.BytesIO(pdfBytes)) as pdf:
+            for page in pdf.pages:
+                pageText = page.extract_text()
+                if pageText:
+                    extractedPages.append(pageText.strip())
+        return "\n\n".join(extractedPages)
+    except Exception:
+        # Fallback to plain text if it's not a valid PDF
+        try:
+            return pdfBytes.decode('utf-8')
+        except Exception:
+            raise ValueError("Could not parse file as PDF or plain text.")
 
 
 def parseCv(pdfBytes: bytes) -> dict:

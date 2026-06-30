@@ -23,9 +23,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["WebSockets"])
 
 # ── Connection Registry ────────────────────────────────────────────────────────
-# Maps sessionId -> active WebSocket instance
+# Maps sessionId -> (active WebSocket instance, AbstractEventLoop)
 # Allows background agents (which only know the sessionId) to push data to the client.
-_activeConnections: Dict[str, WebSocket] = {}
+_activeConnections: Dict[str, tuple[WebSocket, asyncio.AbstractEventLoop]] = {}
 
 
 # ── Internal Push Interface (Used by Agents) ───────────────────────────────────
@@ -35,15 +35,15 @@ def pushToClientSync(sessionId: str, message: dict) -> None:
     Synchronous wrapper to push a JSON message to a connected WebSocket client.
     Agents (which run in a thread pool and cannot await directly) call this.
     """
-    ws = _activeConnections.get(sessionId)
-    if not ws:
+    ws_info = _activeConnections.get(sessionId)
+    if not ws_info:
         # Client not connected, or drop occurred. The frame is safely ignored.
         # It's already in the session state JSON anyway.
         return
 
+    ws, loop = ws_info
     # Schedule the coroutine on the main event loop safely from the worker thread
     try:
-        loop = asyncio.get_event_loop()
         asyncio.run_coroutine_threadsafe(ws.send_json(message), loop)
     except Exception as exc:
         logger.warning(
@@ -70,8 +70,9 @@ async def interviewWebsocket(websocket: WebSocket, sessionId: str):
         await websocket.close(code=1008)
         return
 
-    # Register connection
-    _activeConnections[sessionId] = websocket
+    # Register connection with its event loop
+    loop = asyncio.get_running_loop()
+    _activeConnections[sessionId] = (websocket, loop)
     logger.info("WebSocket connected for session %s", sessionId)
 
     try:

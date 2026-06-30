@@ -2,49 +2,86 @@ import React from 'react';
 
 const QuestionDisplay = ({ currentQuestion, connectionError, submitError, phaseConfig }) => {
     return (
-        <div className="space-y-6">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {connectionError && (
-                <div className="bg-red-900/50 border border-red-700 rounded-lg p-3 text-sm text-red-300">
+                <div style={{
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    borderRadius: '8px',
+                    padding: '12px 16px',
+                    fontSize: '0.85rem',
+                    color: '#fca5a5'
+                }}>
                     {connectionError}
                 </div>
             )}
 
             {/* Phase badge + question index */}
-            <div className="flex items-center gap-3">
-                <span className={`text-xs font-semibold px-3 py-1 rounded-full ${phaseConfig.color}`}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    padding: '4px 10px',
+                    borderRadius: '99px',
+                    background: phaseConfig.color,
+                    color: phaseConfig.text,
+                    border: `1px solid ${phaseConfig.text}33`
+                }}>
                     {phaseConfig.label}
                 </span>
                 {currentQuestion && (
-                    <span className="text-xs text-gray-500">
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                         Difficulty Level {currentQuestion.difficulty}/5
                     </span>
                 )}
             </div>
 
             {/* Question text */}
-            <div className="space-y-2">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {currentQuestion ? (
                     <>
-                        <h2 className="text-2xl font-semibold leading-snug text-white">
+                        <h2 style={{
+                            fontSize: '1.75rem',
+                            fontWeight: 700,
+                            lineHeight: 1.4,
+                            color: 'var(--text-primary)',
+                            margin: 0,
+                            letterSpacing: '-0.5px'
+                        }}>
                             {currentQuestion.text}
                         </h2>
                         {currentQuestion.category && (
-                            <p className="text-sm text-gray-500 capitalize">
-                                Category: {currentQuestion.category}
+                            <p style={{
+                                fontSize: '0.9rem',
+                                color: 'var(--text-secondary)',
+                                textTransform: 'capitalize',
+                                margin: 0,
+                                fontWeight: 500
+                            }}>
+                                Category: <span style={{ color: 'var(--text-primary)' }}>{currentQuestion.category}</span>
                             </p>
                         )}
                     </>
                 ) : (
-                    <div className="space-y-3 animate-pulse">
-                        <div className="h-7 bg-gray-700 rounded w-3/4"></div>
-                        <div className="h-5 bg-gray-800 rounded w-1/2"></div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', animation: 'pulse-dot 2s infinite' }}>
+                        <div style={{ height: '32px', background: 'var(--bg-muted)', borderRadius: '6px', width: '85%' }}></div>
+                        <div style={{ height: '32px', background: 'var(--bg-muted)', borderRadius: '6px', width: '60%' }}></div>
                     </div>
                 )}
             </div>
 
             {/* Submission error */}
             {submitError && (
-                <div className="bg-red-900/50 border border-red-700 rounded-lg p-3 text-sm text-red-300">
+                <div style={{
+                    background: 'rgba(239, 68, 68, 0.1)',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    borderRadius: '8px',
+                    padding: '12px 16px',
+                    fontSize: '0.85rem',
+                    color: '#fca5a5'
+                }}>
                     {submitError}
                 </div>
             )}

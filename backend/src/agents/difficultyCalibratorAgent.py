@@ -41,6 +41,8 @@
 import logging
 import math
 
+from src.api.websockets.interviewWs import pushToClientSync
+
 logger = logging.getLogger(__name__)
 
 # ── Dimension score thresholds (from manifest) ────────────────────────────────
@@ -239,6 +241,20 @@ def difficultyCalibratorAgent(state: dict) -> dict:
         f"difficulty_level {currentLevel}→{finalLevel} | "
         f"dims={currentDims} | suggest_followup={suggestFollowup}"
     )
+
+    # Push to client immediately
+    sessionId = state.get("session_id")
+    if sessionId:
+        pushToClientSync(
+            sessionId,
+            {
+                "type": "difficulty_update",
+                "payload": {
+                    "difficultyLevel": finalLevel,
+                    "difficultyDimensions": currentDims,
+                }
+            }
+        )
 
     return {
         "difficulty_level": finalLevel,

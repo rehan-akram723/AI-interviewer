@@ -44,8 +44,8 @@ class Settings(BaseSettings):
     openrouter_api_key: str = ""
     """OpenRouter API key. Required for LLM calls even in demo mode (free tier)."""
 
-    openrouter_model: str = "meta-llama/llama-3.3-70b-instruct:free"
-    """Default model. Free tier models: llama-3.3-70b-instruct:free, deepseek-r1:free"""
+    openrouter_model: str = "deepseek/deepseek-v4-flash"
+    """Default model. Can be overridden in .env."""
 
     # ── TTS — ElevenLabs (production only) ───────────────────────────────────
     elevenlabs_api_key: str = ""
@@ -90,7 +90,7 @@ class Settings(BaseSettings):
 
     # ── Pydantic-Settings Configuration ───────────────────────────────────────
     model_config = {
-        "env_file": ".env",
+        "env_file": ["../.env", ".env"],
         "env_file_encoding": "utf-8",
         "case_sensitive": False,
         "extra": "ignore",

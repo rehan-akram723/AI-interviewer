@@ -230,3 +230,12 @@ class InterviewSession(TypedDict):
 
     motivation_text_input: Optional[str]
     """Raw motivation letter text. Set by API route, consumed by cvParserAgent."""
+
+    next_question: Optional[QuestionDict]
+    """The generated question object to be sent to the client."""
+
+    should_advance: Optional[bool]
+    """Routing flag set by followUpAgent, read by conditional edges."""
+
+    suggest_followup: Optional[bool]
+    """Signal from difficultyCalibratorAgent to followUpAgent."""

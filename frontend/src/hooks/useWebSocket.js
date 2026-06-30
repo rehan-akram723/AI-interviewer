@@ -8,7 +8,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-const WS_BASE_URL = 'ws://localhost:8000/ws/interview';
+const WS_BASE_URL = 'ws://localhost:8000/ws/sessions';
 const MAX_RETRY_ATTEMPTS = 5;
 const INITIAL_RETRY_DELAY_MS = 1000;
 

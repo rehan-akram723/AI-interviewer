@@ -82,6 +82,30 @@ const SetupPage = ({ onSubmit, isLoading, error }) => {
         textTransform: 'uppercase',
     };
 
+    const handleQuickStartDemo = () => {
+        const cvText = `
+REHAN AKRAM
+Systems-Focused Software Engineer
+rehan.akram@outlook.com | +92 314 4723778
+
+CAREER SUMMARY:
+Computer Science student and developer blending technical insight with systems-oriented design to craft functional, user-focused products. Experienced in full-stack development with Java and Spring Boot, game development, and distributed systems.
+
+SKILLS:
+Core Development: Java, Spring Boot, MySQL, C/C++, RISC-V Assembly.
+Web & Systems: Full-stack development, System-oriented design, Distributed systems.
+Design & Tools: UX/Product Design, Git, VS Code, Linux, IntelliJ IDEA.
+Specialized: Game development, CI/CD logic, Parallel computing (OpenMP).
+        `;
+        const blob = new Blob([cvText], { type: 'application/pdf' });
+        const dummyFile = new File([blob], 'rehan_akram_cv.pdf', { type: 'application/pdf' });
+        
+        onSubmit(
+            { cvFile: dummyFile, jobDescription: 'AI/ML Engineer. Looking for someone with experience in Machine Learning, Python, scalable architecture, and full-stack development.', companyName: 'Demo Company', motivationLetter: '' },
+            { interviewLength: 'short', interviewMode: 'technical' }
+        );
+    };
+
     return (
         <div style={{
             minHeight: 'calc(100vh - 56px)',
@@ -134,7 +158,7 @@ const SetupPage = ({ onSubmit, isLoading, error }) => {
                     Upload your CV and a job description. Our AI conducts a realistic interview, provides live coaching, and delivers a full performance report.
                 </p>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2.5rem' }}>
                     {[
                         { icon: '🎯', title: 'Personalised Questions', desc: 'Generated from your CV and the target role' },
                         { icon: '💬', title: 'Live Coaching Sidebar', desc: 'Real-time feedback on every answer you give' },
@@ -155,6 +179,26 @@ const SetupPage = ({ onSubmit, isLoading, error }) => {
                         </div>
                     ))}
                 </div>
+
+                <button
+                    onClick={handleQuickStartDemo}
+                    disabled={isLoading}
+                    style={{
+                        padding: '0.85rem 1.5rem',
+                        background: 'transparent',
+                        border: '2px solid var(--accent-emerald)',
+                        color: 'var(--accent-emerald)',
+                        borderRadius: '9px',
+                        fontFamily: 'inherit',
+                        fontSize: '0.95rem',
+                        fontWeight: 700,
+                        cursor: isLoading ? 'not-allowed' : 'pointer',
+                        width: 'fit-content',
+                        transition: 'all 0.2s',
+                    }}
+                >
+                    ⚡ Quick Start Demo (Auto-fill)
+                </button>
             </div>
 
             {/* ── RIGHT: Form Panel ─────────────────────────────────────────── */}
