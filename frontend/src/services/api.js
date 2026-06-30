@@ -57,3 +57,31 @@ export const getCandidateSessions = async (candidateId) => {
     const response = await apiClient.get(`/candidates/${candidateId}/sessions`);
     return response.data;
 };
+
+/**
+ * Fetches the full structured InterviewReport JSON for a completed session.
+ */
+export const getReport = async (sessionId) => {
+    const response = await apiClient.get(`/sessions/${sessionId}/report`);
+    return response.data;
+};
+
+/**
+ * Triggers a ProgressComparison between two sessionIds.
+ * Returns the full ProgressComparison object (deltas + narrative).
+ */
+export const compareReports = async (previousSessionId, currentSessionId) => {
+    const response = await apiClient.post('/reports/compare', {
+        previousSessionId,
+        currentSessionId,
+    });
+    return response.data;
+};
+
+/**
+ * Returns a URL to directly download the PDF binary for a session report.
+ * Opens in a new browser tab — no Axios needed, just a plain URL.
+ */
+export const getReportPdfUrl = (sessionId) => {
+    return `${API_BASE_URL}/sessions/${sessionId}/report/pdf`;
+};
