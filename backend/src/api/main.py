@@ -111,15 +111,17 @@ def healthCheck() -> dict:
     }
 
 
-# ── Routers (Milestone B — will be mounted here) ───────────────────────────────
-# from src.api.routes.setup import router as setupRouter
-# from src.api.routes.interview import router as interviewRouter
-# from src.api.routes.report import router as reportRouter
-# from src.api.routes.candidates import router as candidatesRouter
-# from src.api.routes.comparison import router as comparisonRouter
-#
-# app.include_router(setupRouter,       prefix="/api")
-# app.include_router(interviewRouter,   prefix="/api")
-# app.include_router(reportRouter,      prefix="/api")
-# app.include_router(candidatesRouter,  prefix="/api")
-# app.include_router(comparisonRouter,  prefix="/api")
+# ── Routers (Milestone B) ──────────────────────────────────────────────────────
+from src.api.routes.setup import router as setupRouter
+from src.api.routes.interview import router as interviewRouter
+from src.api.routes.report import router as reportRouter
+from src.api.routes.candidates import router as candidatesRouter
+from src.api.routes.comparison import router as comparisonRouter
+from src.api.websockets.interviewWs import router as websocketsRouter
+
+app.include_router(setupRouter,       prefix="/api")
+app.include_router(interviewRouter,   prefix="/api")
+app.include_router(reportRouter,      prefix="/api")
+app.include_router(candidatesRouter,  prefix="/api")
+app.include_router(comparisonRouter,  prefix="/api")
+app.include_router(websocketsRouter)
