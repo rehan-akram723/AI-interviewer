@@ -37,19 +37,24 @@ logger = logging.getLogger(__name__)
 # ── Fields that must never be written to disk ──────────────────────────────────
 # These carry raw bytes or large runtime blobs that are only needed in-flight.
 _EPHEMERAL_FIELD_PREFIXES = ("_",)
+_EPHEMERAL_EXACT_KEYS = {"cv_bytes_input", "jd_text_input", "motivation_text_input"}
 
 # ── Valid session status transitions ──────────────────────────────────────────
 _VALID_STATUSES = {"setting_up", "ready", "in_progress", "completed", "error"}
 
-
 def _stripEphemeralFields(session: dict) -> dict:
     """
     Return a shallow copy of the session dict with all ephemeral runtime fields
-    removed. Ephemeral fields are identified by a leading underscore in the key.
+    removed. Ephemeral fields are identified by:
+      - A leading underscore in the key (e.g. _runtime_blob), OR
+      - Membership in _EPHEMERAL_EXACT_KEYS (e.g. cv_bytes_input)
 
     This is called before every disk write — never persist raw PDF bytes, etc.
     """
-    return {k: v for k, v in session.items() if not k.startswith("_")}
+    return {
+        k: v for k, v in session.items()
+        if not k.startswith("_") and k not in _EPHEMERAL_EXACT_KEYS
+    }
 
 
 class SessionManager:

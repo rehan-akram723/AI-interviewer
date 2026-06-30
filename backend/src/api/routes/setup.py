@@ -94,10 +94,12 @@ async def setupSession(
     )
     sessionId = session["session_id"]
 
-    # Inject raw inputs as ephemeral fields (prefixed with "_" — stripped on disk write)
-    session["_cv_bytes"] = cvBytes
-    session["_jd_text"] = jobDescription
-    session["_motivation_text"] = motivationLetter
+    # Inject raw inputs as ephemeral fields — declared in InterviewSession TypedDict
+    # with _input suffix so they survive LangGraph's Pydantic validation layer.
+    # sessionManager.saveSession() strips these via the EPHEMERAL_KEYS exclusion set.
+    session["cv_bytes_input"] = cvBytes
+    session["jd_text_input"] = jobDescription
+    session["motivation_text_input"] = motivationLetter
 
     # Build initial candidate stub and persist it
     candidateStub = {

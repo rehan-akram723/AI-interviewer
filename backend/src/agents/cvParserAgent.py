@@ -55,9 +55,9 @@ def cvParserAgent(state: dict) -> dict:
     stepLog.append("[cvParserAgent] Starting CV + JD + motivation parsing.")
 
     # ── 1. Parse CV ──────────────────────────────────────────────────────────
-    cvBytes: Optional[bytes] = state.get("_cv_bytes")
+    cvBytes: Optional[bytes] = state.get("cv_bytes_input")
     if not cvBytes:
-        raise ValueError("cvParserAgent: _cv_bytes not found in state. Cannot parse CV.")
+        raise ValueError("cvParserAgent: cv_bytes_input not found in state. Cannot parse CV.")
 
     stepLog.append("[cvParserAgent] Extracting text from CV PDF...")
     cvData = parseCv(cvBytes)
@@ -68,7 +68,7 @@ def cvParserAgent(state: dict) -> dict:
     )
 
     # ── 2. Parse JD ──────────────────────────────────────────────────────────
-    jdText: str = state.get("_jd_text", "")
+    jdText: str = state.get("jd_text_input", "")
     if jdText.strip():
         stepLog.append("[cvParserAgent] Parsing job description...")
         jdData = parseJd(jdText)
@@ -84,7 +84,7 @@ def cvParserAgent(state: dict) -> dict:
         requiredSkillsFromJd = []
 
     # ── 3. Parse Motivation ───────────────────────────────────────────────────
-    motivationText: str = state.get("_motivation_text", "")
+    motivationText: str = state.get("motivation_text_input", "")
     if motivationText.strip():
         stepLog.append("[cvParserAgent] Summarising motivation letter...")
         motivation = parseMotivation(motivationText)

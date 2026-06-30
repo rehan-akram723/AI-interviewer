@@ -1,105 +1,129 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// frontend/src/App.jsx
+// Root application — dark shell with state machine routing
+// ─────────────────────────────────────────────────────────────────────────────
+
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useSession } from './context/SessionContext';
-import UploadPanel from './components/setup/UploadPanel';
+import SetupPage from './pages/SetupPage';
 import SetupProgress from './components/setup/SetupProgress';
 import InterviewRoom from './components/interview/InterviewRoom';
 import ReportViewer from './components/report/ReportViewer';
-import ComparisonViewer from './components/report/ComparisonViewer';
 
 const App = () => {
-    const { 
-        sessionId, 
-        setSessionId, 
-        setCandidateId, 
-        currentPhase, 
-        setCurrentPhase 
+    const {
+        sessionId,
+        setSessionId,
+        setCandidateId,
+        currentPhase,
+        setCurrentPhase,
+        setInterviewLength,
+        setInterviewMode,
     } = useSession();
 
-    const [formData, setFormData] = useState(null);
     const [isStarting, setIsStarting] = useState(false);
+    const [startError, setStartError] = useState(null);
 
-    const handleStartSetup = async () => {
-        if (!formData || !formData.cvFile) {
-            alert('Please select a CV PDF file to start.');
-            return;
-        }
-
+    const handleStartSetup = async (formData, config) => {
         setIsStarting(true);
+        setStartError(null);
         try {
             const data = new FormData();
             data.append('cvFile', formData.cvFile);
             data.append('jobDescription', formData.jobDescription || '');
             data.append('companyName', formData.companyName || '');
             data.append('motivationLetter', formData.motivationLetter || '');
-            // Using defaults for length and mode for now, or could come from context
-            data.append('interviewLength', 'medium');
-            data.append('interviewMode', 'mixed');
+            data.append('interviewLength', config.interviewLength || 'medium');
+            data.append('interviewMode', config.interviewMode || 'mixed');
 
             const res = await axios.post('http://localhost:8000/api/sessions/setup', data, {
-                headers: { 'Content-Type': 'multipart/form-data' }
+                headers: { 'Content-Type': 'multipart/form-data' },
             });
-            
+
             setSessionId(res.data.session_id);
             setCandidateId(res.data.candidate_id);
+            setInterviewLength(config.interviewLength);
+            setInterviewMode(config.interviewMode);
             setCurrentPhase('waiting');
         } catch (err) {
-            console.error('Failed to start setup:', err);
-            alert('Failed to connect to the server.');
+            console.error('Setup failed:', err);
+            setStartError(err.response?.data?.detail || 'Failed to connect to server. Is the backend running?');
         } finally {
             setIsStarting(false);
         }
     };
 
     return (
-        <div className="min-h-screen bg-gray-100 flex flex-col font-sans">
-            {/* Header */}
-            <header className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+        <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
+            {/* ── Global Nav Bar ─────────────────────────────────────────────── */}
+            <header style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0 2rem',
+                height: '56px',
+                borderBottom: '1px solid var(--bg-border)',
+                background: 'var(--bg-surface)',
+                position: 'sticky',
+                top: 0,
+                zIndex: 100,
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{
+                        width: 30, height: 30, borderRadius: 8,
+                        background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        flexShrink: 0,
+                    }}>
+                        <svg width="16" height="16" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                         </svg>
                     </div>
-                    <h1 className="text-xl font-bold text-gray-800 tracking-tight">AI Interviewer</h1>
+                    <span style={{ fontWeight: 700, fontSize: '1rem', letterSpacing: '-0.3px' }}>
+                        AI Interviewer
+                    </span>
+                </div>
+
+                {/* Phase breadcrumb */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                    {['Setup', 'Processing', 'Interview', 'Report'].map((label, i) => {
+                        const phases = ['setup', 'waiting', 'interview', 'report'];
+                        const currentIdx = phases.indexOf(currentPhase);
+                        const isActive = phases[i] === currentPhase;
+                        const isDone = i < currentIdx;
+                        return (
+                            <React.Fragment key={label}>
+                                <span style={{
+                                    color: isActive ? 'var(--accent-blue)' : isDone ? 'var(--text-secondary)' : 'var(--text-muted)',
+                                    fontWeight: isActive ? 600 : 400,
+                                }}>
+                                    {isDone ? '✓ ' : ''}{label}
+                                </span>
+                                {i < 3 && <span style={{ color: 'var(--bg-muted)' }}>›</span>}
+                            </React.Fragment>
+                        );
+                    })}
                 </div>
             </header>
 
-            {/* Main Content Area via State Machine Routing */}
-            <main className="flex-1 p-6 flex items-center justify-center">
+            {/* ── State Machine Router ───────────────────────────────────────── */}
+            <main style={{ flex: 1 }}>
                 {currentPhase === 'setup' && (
-                    <div className="w-full max-w-3xl flex flex-col items-center">
-                        <div className="w-full">
-                            <UploadPanel onFormDataChange={setFormData} />
-                        </div>
-                        <button 
-                            onClick={handleStartSetup}
-                            disabled={!formData?.cvFile || isStarting}
-                            className={`mt-8 px-8 py-3 rounded-lg text-white font-semibold text-lg transition-all shadow-md ${
-                                !formData?.cvFile || isStarting 
-                                ? 'bg-blue-300 cursor-not-allowed' 
-                                : 'bg-blue-600 hover:bg-blue-700 hover:shadow-lg active:transform active:scale-95'
-                            }`}
-                        >
-                            {isStarting ? 'Uploading...' : 'Begin Interview Setup'}
-                        </button>
-                    </div>
+                    <SetupPage
+                        onSubmit={handleStartSetup}
+                        isLoading={isStarting}
+                        error={startError}
+                    />
                 )}
-
                 {currentPhase === 'waiting' && (
                     <SetupProgress />
                 )}
-
                 {currentPhase === 'interview' && (
-                    <div className="w-full h-full max-w-7xl mx-auto rounded-2xl overflow-hidden shadow-2xl border border-gray-800">
-                        <InterviewRoom sessionId={sessionId} isDemo={true} />
-                    </div>
+                    <InterviewRoom sessionId={sessionId} isDemo={true} />
                 )}
-
                 {currentPhase === 'report' && (
-                    <div className="w-full max-w-5xl mx-auto bg-white rounded-xl shadow-xl overflow-hidden p-6 border border-gray-200">
-                        <ReportViewer sessionId={sessionId} />
-                    </div>
+                    <ReportViewer sessionId={sessionId} />
                 )}
             </main>
         </div>

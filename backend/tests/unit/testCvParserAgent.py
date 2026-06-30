@@ -47,9 +47,9 @@ def makeAgentState(overrides: dict = None) -> dict:
             "session_ids": ["test-session-001"],
             "created_at": "2026-01-01T00:00:00Z",
         },
-        "_cv_bytes": b"fake-pdf-bytes",
-        "_jd_text": "We need a Senior Backend Engineer with Python, FastAPI, Docker, Kubernetes.",
-        "_motivation_text": "I am passionate about AI systems and want to join Acme Corp.",
+        "cv_bytes_input": b"fake-pdf-bytes",
+        "jd_text_input": "We need a Senior Backend Engineer with Python, FastAPI, Docker, Kubernetes.",
+        "motivation_text_input": "I am passionate about AI systems and want to join Acme Corp.",
         "interview_length": "medium",
         "interview_mode": "mixed",
         "step_log": [],
@@ -145,15 +145,15 @@ class TestCvParserAgentOutput:
 class TestCvParserAgentEdgeCases:
 
     def test_raises_when_cv_bytes_missing(self):
-        """Agent must raise ValueError if _cv_bytes is not in state."""
+        """Agent must raise ValueError if cv_bytes_input is not in state."""
         from src.agents.cvParserAgent import cvParserAgent
-        state = makeAgentState({"_cv_bytes": None})
-        with pytest.raises(ValueError, match="_cv_bytes not found"):
+        state = makeAgentState({"cv_bytes_input": None})
+        with pytest.raises(ValueError, match="cv_bytes_input not found"):
             cvParserAgent(state)
 
     def test_handles_missing_jd_gracefully(self):
         """If no JD text is provided, agent should skip JD parsing cleanly."""
-        state = makeAgentState({"_jd_text": ""})
+        state = makeAgentState({"jd_text_input": ""})
         with patch("src.agents.cvParserAgent.parseCv", return_value=MOCK_CV_DATA):
             with patch("src.agents.cvParserAgent.parseMotivation", return_value=MOCK_MOTIVATION):
                 from src.agents.cvParserAgent import cvParserAgent
@@ -164,7 +164,7 @@ class TestCvParserAgentEdgeCases:
 
     def test_handles_missing_motivation_gracefully(self):
         """If no motivation text is provided, agent should use empty string."""
-        state = makeAgentState({"_motivation_text": ""})
+        state = makeAgentState({"motivation_text_input": ""})
         with patch("src.agents.cvParserAgent.parseCv", return_value=MOCK_CV_DATA):
             with patch("src.agents.cvParserAgent.parseJd", return_value=MOCK_JD_DATA):
                 from src.agents.cvParserAgent import cvParserAgent

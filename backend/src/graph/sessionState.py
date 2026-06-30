@@ -212,3 +212,21 @@ class InterviewSession(TypedDict):
     entries. Format: "[AGENT_NAME] <action description>"
     Used for debugging, transparency, and the setup progress UI.
     """
+
+    # ── Ephemeral Runtime Fields (API → Graph, never persisted to disk) ────────
+    # These fields carry raw input data from the API route into the setup graph.
+    # NOTE: Do NOT use underscore prefixes here. LangGraph converts this TypedDict
+    # to a Pydantic model internally, and Pydantic treats _name as private
+    # attributes, mangling them to private__name and making them invisible to agents.
+    # Instead, use descriptive _input suffix names and strip them on disk write via
+    # the existing _stripEphemeralFields() logic (which strips keys starting with "_").
+    # To keep disk-strip behaviour, the sessionManager strips all keys prefixed "_",
+    # so we use a separate exclusion set in saveSession for these keys.
+    cv_bytes_input: Optional[bytes]
+    """Raw PDF bytes of the uploaded CV. Set by API route, consumed by cvParserAgent."""
+
+    jd_text_input: Optional[str]
+    """Raw job description text. Set by API route, consumed by cvParserAgent."""
+
+    motivation_text_input: Optional[str]
+    """Raw motivation letter text. Set by API route, consumed by cvParserAgent."""
