@@ -226,3 +226,38 @@ def shouldFollowUp(state: dict) -> bool:
         return True
 
     return False
+
+
+async def process_answer_pipeline(state: dict) -> dict:
+    """
+    Run the live coach, difficulty calibrator, and follow-up agents concurrently.
+    Returns a dict with coaching_feedback, difficulty_level, and next_question.
+    Raises PipelineError if any agent fails.
+    """
+    import asyncio
+    from src.agents.liveCoachAgent import liveCoachAgent
+    from src.agents.difficultyCalibratorAgent import difficultyCalibratorAgent
+    from src.agents.followUpAgent import followUpAgent
+    from src.core.exceptions import PipelineError
+
+    loop = asyncio.get_event_loop()
+
+    async def safe_run(agent_name: str, agent_func, state_ref: dict):
+        try:
+            return await loop.run_in_executor(None, agent_func, state_ref)
+        except Exception as e:
+            raise PipelineError(agentName=agent_name, originalException=e)
+
+    results = await asyncio.gather(
+        safe_run("live_coach_agent", liveCoachAgent, state),
+        safe_run("difficulty_calibrator_agent", difficultyCalibratorAgent, state),
+        safe_run("followup_agent", followUpAgent, state)
+    )
+
+    coach_res, calib_res, followup_res = results
+
+    return {
+        "coaching_feedback": coach_res.get("coaching_feedback"),
+        "difficulty_level": calib_res.get("difficulty_level"),
+        "next_question": followup_res.get("next_question")
+    }

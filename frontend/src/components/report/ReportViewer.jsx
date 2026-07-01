@@ -7,7 +7,9 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import React, { useState, useEffect } from 'react';
-import { getReport, generateReport, getReportPdfUrl } from '../../services/api';
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
+import { getReport, generateReport } from '../../services/api';
 
 // Dimension display configuration — human labels for camelCase schema keys
 const DIMENSION_CONFIG = {
@@ -120,8 +122,19 @@ const ReportViewer = ({ sessionId }) => {
     }
     if (!report) return null;
 
+    const downloadPDF = async () => {
+        const element = document.getElementById("report-content");
+        const canvas = await html2canvas(element);
+        const imgData = canvas.toDataURL("image/png");
+        const pdf = new jsPDF("p", "mm", "a4");
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+        pdf.save(`interview_report_${sessionId}.pdf`);
+    };
+
     return (
-        <div className="max-w-5xl mx-auto px-4 py-10 space-y-10">
+        <div id="report-content" className="max-w-5xl mx-auto px-4 py-10 space-y-10">
 
             {/* ── Header card ─────────────────────────────────────────────────── */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 flex flex-col sm:flex-row items-center gap-8">
@@ -137,17 +150,15 @@ const ReportViewer = ({ sessionId }) => {
                     </div>
 
                     {/* PDF download */}
-                    <a
-                        href={getReportPdfUrl(sessionId)}
-                        target="_blank"
-                        rel="noreferrer"
+                    <button
+                        onClick={downloadPDF}
                         className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors"
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
                         </svg>
                         Download PDF Report
-                    </a>
+                    </button>
                 </div>
             </div>
 

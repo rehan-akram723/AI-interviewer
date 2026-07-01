@@ -278,3 +278,24 @@ class PdfGenerationError(AppBaseException):
             statusCode=500,
         )
         self.sessionId: str = sessionId
+
+
+# ── Pipeline Exceptions ────────────────────────────────────────────────────────
+
+class PipelineError(AppBaseException):
+    """
+    Raised when an agent fails during concurrent pipeline execution.
+    
+    Attributes:
+        agentName: The name of the agent that failed.
+        originalException: The original exception that was raised.
+    """
+
+    def __init__(self, agentName: str, originalException: Exception) -> None:
+        super().__init__(
+            message=f"Agent '{agentName}' failed in pipeline: {str(originalException)}",
+            errorCode="PIPELINE_ERROR",
+            statusCode=500,
+        )
+        self.agentName: str = agentName
+        self.originalException: Exception = originalException

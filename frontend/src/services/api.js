@@ -85,11 +85,3 @@ export const compareReports = async (previousSessionId, currentSessionId) => {
     });
     return response.data;
 };
-
-/**
- * Returns a URL to directly download the PDF binary for a session report.
- * Opens in a new browser tab — no Axios needed, just a plain URL.
- */
-export const getReportPdfUrl = (sessionId) => {
-    return `${API_BASE_URL}/sessions/${sessionId}/report/pdf`;
-};

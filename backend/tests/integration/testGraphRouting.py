@@ -508,17 +508,14 @@ class TestReportGraphRouting:
 
     @patch("src.modules.reporting.scoreCalculator.callLlm")
     @patch("src.modules.reporting.reportBuilder.callLlm")
-    @patch("src.graph.reportGraph.pdfGeneratorNode")
     def test_reportGraphPopulatesFinalReport(
-        self, mockPdfNode, mockReportLlm, mockScoreLlm
+        self, mockReportLlm, mockScoreLlm
     ):
         """
         reportGraph terminates and final_report is populated correctly.
-        PDF node is mocked to avoid WeasyPrint dependency in CI.
         """
         mockScoreLlm.return_value = _MOCK_DIMENSION_SCORE
         mockReportLlm.return_value = _MOCK_REPORT_NARRATIVE
-        mockPdfNode.return_value = {"pdf_path": None, "step_log": ["[PDF] Skipped (mocked)."]}
 
         state = makeCompletedStateWithAnswers()
         result = reportGraph.invoke(state)

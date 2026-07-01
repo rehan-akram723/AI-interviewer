@@ -75,45 +75,6 @@ async def getReport(sessionId: str) -> JSONResponse:
     return JSONResponse(content=finalReport)
 
 
-@router.get("/sessions/{sessionId}/report/pdf")
-async def downloadReportPdf(sessionId: str) -> StreamingResponse:
-    """
-    Stream the PDF interview report as a binary download.
-
-    Requires the report generation pipeline to have completed (pdf_path must
-    be set in session state). If the PDF file is missing, returns 404.
-
-    Returns:
-        200 StreamingResponse with application/pdf content type.
-        404 if the session, report, or PDF file is not found.
-    """
-    session = await _resolveSession(sessionId)
-    sessionStatus = session.get("status", "")
-
-    if sessionStatus != "completed":
-        raise SessionNotReadyError(sessionId=sessionId, currentStatus=sessionStatus)
-
-    pdfPath = session.get("pdf_path")
-
-    if not pdfPath or not os.path.exists(pdfPath):
-        raise ReportNotFoundError(sessionId=sessionId)
-
-    def iterPdfFile():
-        """Generator that yields the PDF in 64 KB chunks."""
-        with open(pdfPath, "rb") as fh:
-            while chunk := fh.read(65536):
-                yield chunk
-
-    candidateId = session.get("candidate_id", sessionId)
-    filename = f"interview_report_{candidateId[:8]}.pdf"
-
-    logger.info("Streaming PDF for session %s from %s", sessionId, pdfPath)
-    return StreamingResponse(
-        iterPdfFile(),
-        media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
-    )
-
 
 @router.post("/sessions/{sessionId}/report/generate", status_code=status.HTTP_202_ACCEPTED)
 async def generateReport(sessionId: str) -> JSONResponse:

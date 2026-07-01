@@ -89,6 +89,7 @@ class SessionManager:
         If not provided, the paths from appConfig.settings are used.
         """
         self._activeSessions: dict[str, dict] = {}
+        self._prefetch_cache: dict[str, dict] = {}
 
         self._candidateDir = Path(
             candidateStoragePath or settings.candidate_storage_path
@@ -289,6 +290,19 @@ class SessionManager:
         Silently does nothing if the session is not loaded.
         """
         self._activeSessions.pop(sessionId, None)
+        self._prefetch_cache.pop(sessionId, None)
+
+    def store_prefetched_question(self, session_id: str, question: dict) -> None:
+        """Store a pre-generated next question in the cache."""
+        self._prefetch_cache[session_id] = question
+        logger.debug("Stored prefetched question for session %s", session_id)
+
+    def pop_prefetched_question(self, session_id: str) -> Optional[dict]:
+        """Retrieve and remove a prefetched question if it exists."""
+        q = self._prefetch_cache.pop(session_id, None)
+        if q:
+            logger.debug("Popped prefetched question for session %s", session_id)
+        return q
 
     def getActiveSessionIds(self) -> list:
         """Return list of all session IDs currently held in memory."""
