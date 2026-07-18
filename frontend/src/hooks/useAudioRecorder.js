@@ -3,10 +3,12 @@
 //
 // Manages the microphone capture lifecycle using MediaRecorder API.
 //
-// Demo mode: Completely short-circuits — no device permissions requested,
-//            no MediaRecorder instantiated. All returned handlers are no-ops.
+// Demo mode: isDemo=true — all handlers are no-ops, no permissions requested.
 // Production: Manages isRecording state, accumulates audio chunks, and
 //             compiles a clean Blob when recording stops.
+//
+// FIX: Removed conditional early return that violated Rules of Hooks.
+//      All hooks are now called unconditionally; isDemo gates behaviour inside.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useState, useRef, useCallback } from 'react';
@@ -19,22 +21,12 @@ const useAudioRecorder = (isDemo = true) => {
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
     const streamRef = useRef(null);
+    const isRecordingRef = useRef(false); // mirrors state for use inside closures
 
-    // ── Demo mode short-circuit ────────────────────────────────────────────────
-    if (isDemo) {
-        return {
-            isRecording: false,
-            audioBlob: null,
-            permissionError: null,
-            startRecording: () => {},
-            stopRecording: () => {},
-            clearAudioBlob: () => {}
-        };
-    }
-
-    // ── Production recording state machine ────────────────────────────────────
+    // ── Start recording ───────────────────────────────────────────────────────
     const startRecording = useCallback(async () => {
-        if (isRecording) return;
+        if (isDemo) return;
+        if (isRecordingRef.current) return;
 
         try {
             setPermissionError(null);
@@ -65,7 +57,8 @@ const useAudioRecorder = (isDemo = true) => {
                 }
             };
 
-            mediaRecorder.start(250); // Emit a chunk every 250ms
+            mediaRecorder.start(250); // Emit a chunk every 250 ms
+            isRecordingRef.current = true;
             setIsRecording(true);
         } catch (err) {
             console.error('[useAudioRecorder] Microphone access denied:', err);
@@ -73,20 +66,36 @@ const useAudioRecorder = (isDemo = true) => {
                 'Microphone access was denied. Please allow microphone access and try again.'
             );
         }
-    }, [isRecording]);
+    }, [isDemo]); // stable — no longer depends on isRecording state
 
+    // ── Stop recording ────────────────────────────────────────────────────────
     const stopRecording = useCallback(() => {
-        if (!isRecording || !mediaRecorderRef.current) return;
+        if (isDemo) return;
+        if (!isRecordingRef.current || !mediaRecorderRef.current) return;
 
         if (mediaRecorderRef.current.state !== 'inactive') {
             mediaRecorderRef.current.stop();
         }
+        isRecordingRef.current = false;
         setIsRecording(false);
-    }, [isRecording]);
+    }, [isDemo]);
 
+    // ── Clear blob ────────────────────────────────────────────────────────────
     const clearAudioBlob = useCallback(() => {
         setAudioBlob(null);
     }, []);
+
+    // ── Demo short-circuit output (hooks already ran above) ───────────────────
+    if (isDemo) {
+        return {
+            isRecording: false,
+            audioBlob: null,
+            permissionError: null,
+            startRecording,
+            stopRecording,
+            clearAudioBlob,
+        };
+    }
 
     return {
         isRecording,
@@ -94,7 +103,7 @@ const useAudioRecorder = (isDemo = true) => {
         permissionError,
         startRecording,
         stopRecording,
-        clearAudioBlob
+        clearAudioBlob,
     };
 };
 

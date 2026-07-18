@@ -19,6 +19,9 @@ const useWebSocket = (sessionId) => {
         difficultyLevel: 1,
         difficultyDimensions: {}
     });
+    const [nextQuestion, setNextQuestion] = useState(null);
+    const [isInterviewComplete, setIsInterviewComplete] = useState(false);
+    const [isReportReady, setIsReportReady] = useState(false);
     const [connectionError, setConnectionError] = useState(null);
 
     const socketRef = useRef(null);
@@ -38,6 +41,14 @@ const useWebSocket = (sessionId) => {
                     difficultyLevel: payload.difficultyLevel ?? 1,
                     difficultyDimensions: payload.difficultyDimensions ?? {}
                 });
+            } else if (type === 'next_question') {
+                setNextQuestion(payload);
+            } else if (type === 'interview_complete') {
+                setIsInterviewComplete(true);
+            } else if (type === 'report_ready') {
+                setIsReportReady(true);
+            } else if (type === 'error') {
+                setConnectionError(payload?.message || 'Unknown error occurred.');
             }
         } catch (err) {
             console.error('[useWebSocket] Failed to parse server message:', err);
@@ -117,6 +128,9 @@ const useWebSocket = (sessionId) => {
         coachingFeedback,
         difficultyMetrics,
         connectionError,
+        nextQuestion,
+        isInterviewComplete,
+        isReportReady,
         sendMessage
     };
 };
