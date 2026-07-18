@@ -1,12 +1,5 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// frontend/src/pages/SetupPage.jsx
-//
-// The full setup page — two-column layout:
-//   Left:  Hero copy + feature bullets
-//   Right: Tabbed form (Upload → Configure → Launch)
-// ─────────────────────────────────────────────────────────────────────────────
-
 import React, { useState, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const LENGTH_OPTIONS = [
     { value: 'short',  label: 'Short',  sub: '5–7 questions · ~10 min' },
@@ -21,6 +14,16 @@ const MODE_OPTIONS = [
     { value: 'system_design', label: 'System Design',  icon: '🏗',  desc: '90% architecture & design questions' },
     { value: 'hr_culture_fit',label: 'Culture Fit',    icon: '🤝', desc: '70% culture & motivation questions' },
 ];
+
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
+};
+
+const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } }
+};
 
 const SetupPage = ({ onSubmit, isLoading, error }) => {
     const [step, setStep] = useState(0); // 0=upload, 1=configure
@@ -52,35 +55,15 @@ const SetupPage = ({ onSubmit, isLoading, error }) => {
     const handleSubmit = () => {
         onSubmit(
             { cvFile, jobDescription, companyName, motivationLetter },
-            { interviewLength, interviewMode }
+            { interviewLength, interviewMode, appMode: 'production' }
         );
     };
 
     const canProceed = cvFile && jobDescription.trim().length > 10;
 
-    // ── Shared input style ─────────────────────────────────────────────────────
-    const inputStyle = {
-        width: '100%',
-        background: 'var(--bg-primary)',
-        border: '1px solid var(--bg-border)',
-        borderRadius: '8px',
-        color: 'var(--text-primary)',
-        fontFamily: 'inherit',
-        fontSize: '0.9rem',
-        padding: '0.7rem 1rem',
-        transition: 'border-color 0.2s',
-        boxSizing: 'border-box',
-    };
-
-    const labelStyle = {
-        display: 'block',
-        fontSize: '0.8125rem',
-        fontWeight: 600,
-        color: 'var(--text-secondary)',
-        marginBottom: '6px',
-        letterSpacing: '0.02em',
-        textTransform: 'uppercase',
-    };
+    const inputClass = "w-full bg-slate-900/50 border border-slate-700/50 rounded-[12px] text-slate-100 placeholder:text-slate-500 font-sans text-sm px-4 py-3.5 transition-all duration-300 focus:outline-none focus:border-accent-blue focus:ring-1 focus:ring-accent-blue/50 focus:bg-slate-900 shadow-inner";
+    
+    const labelClass = "block text-[11px] font-bold text-slate-400 mb-2 tracking-[0.1em] uppercase";
 
     const handleQuickStartDemo = () => {
         const cvText = `
@@ -102,386 +85,294 @@ Specialized: Game development, CI/CD logic, Parallel computing (OpenMP).
         
         onSubmit(
             { cvFile: dummyFile, jobDescription: 'AI/ML Engineer. Looking for someone with experience in Machine Learning, Python, scalable architecture, and full-stack development.', companyName: 'Demo Company', motivationLetter: '' },
-            { interviewLength: 'short', interviewMode: 'technical' }
+            { interviewLength: 'short', interviewMode: 'technical', appMode: 'demo' }
         );
     };
 
     return (
-        <div style={{
-            minHeight: 'calc(100vh - 56px)',
-            display: 'grid',
-            gridTemplateColumns: '1fr 520px',
-            overflow: 'hidden',
-        }}>
+        <div className="h-full grid grid-cols-1 lg:grid-cols-2 relative z-10">
             {/* ── LEFT: Hero ────────────────────────────────────────────────── */}
-            <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                padding: '4rem 5rem',
-                background: 'var(--bg-surface)',
-                borderRight: '1px solid var(--bg-border)',
-            }}>
-                <div style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '6px 14px',
-                    background: 'rgba(59,130,246,0.1)',
-                    border: '1px solid rgba(59,130,246,0.25)',
-                    borderRadius: '999px',
-                    fontSize: '0.78rem',
-                    fontWeight: 600,
-                    color: 'var(--accent-blue)',
-                    width: 'fit-content',
-                    marginBottom: '2rem',
-                }}>
-                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-blue)', display: 'inline-block' }}></span>
-                    AI-Powered Interview Practice
-                </div>
+            <div className="flex flex-col justify-center px-12 lg:px-24 py-16 relative">
+                {/* Organic shapes behind hero */}
+                <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-accent-blue/20 rounded-full blur-[80px] -z-10 mix-blend-screen animate-blob"></div>
+                
+                <motion.div initial="hidden" animate="visible" variants={containerVariants} className="max-w-[480px]">
+                    <motion.div variants={itemVariants} className="inline-flex items-center gap-2 px-4 py-2 glass rounded-full text-xs font-bold text-accent-blue mb-8 backdrop-blur-md border border-accent-blue/20">
+                        <span className="w-2 h-2 rounded-full bg-accent-blue animate-pulse-slow"></span>
+                        AI-Powered Interview Practice
+                    </motion.div>
 
-                <h1 style={{
-                    fontSize: '3rem',
-                    fontWeight: 800,
-                    lineHeight: 1.1,
-                    letterSpacing: '-1.5px',
-                    margin: '0 0 1.25rem',
-                    background: 'linear-gradient(135deg, #fafafa 40%, #a1a1aa)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                }}>
-                    Ace your next<br />technical interview
-                </h1>
+                    <motion.h1 variants={itemVariants} className="text-5xl lg:text-7xl font-extrabold leading-[1.05] tracking-tight mb-6 gradient-text">
+                        Ace your next<br />technical role
+                    </motion.h1>
 
-                <p style={{ fontSize: '1.0625rem', color: 'var(--text-secondary)', lineHeight: 1.7, maxWidth: 440, margin: '0 0 2.5rem' }}>
-                    Upload your CV and a job description. Our AI conducts a realistic interview, provides live coaching, and delivers a full performance report.
-                </p>
+                    <motion.p variants={itemVariants} className="text-lg text-slate-400 leading-relaxed mb-12 font-light">
+                        Upload your CV and a job description. Our AI conducts a realistic interview, provides live coaching, and delivers a full performance report.
+                    </motion.p>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2.5rem' }}>
-                    {[
-                        { icon: '🎯', title: 'Personalised Questions', desc: 'Generated from your CV and the target role' },
-                        { icon: '💬', title: 'Live Coaching Sidebar', desc: 'Real-time feedback on every answer you give' },
-                        { icon: '📊', title: 'Detailed Score Report', desc: 'Scored across 6 performance dimensions' },
-                    ].map(f => (
-                        <div key={f.title} style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
-                            <span style={{
-                                width: 38, height: 38, borderRadius: '10px',
-                                background: 'var(--bg-elevated)',
-                                border: '1px solid var(--bg-border)',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontSize: '1rem', flexShrink: 0,
-                            }}>{f.icon}</span>
-                            <div>
-                                <div style={{ fontWeight: 600, fontSize: '0.9375rem', marginBottom: 2 }}>{f.title}</div>
-                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{f.desc}</div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                    <motion.div variants={containerVariants} className="flex flex-col gap-6 mb-12">
+                        {[
+                            { icon: '🎯', title: 'Personalised Questions', desc: 'Generated from your CV and the target role' },
+                            { icon: '💬', title: 'Live Coaching Sidebar', desc: 'Real-time feedback on every answer you give' },
+                            { icon: '📊', title: 'Detailed Score Report', desc: 'Scored across 6 performance dimensions' },
+                        ].map((f, i) => (
+                            <motion.div key={f.title} variants={itemVariants} className="group flex gap-4 items-start">
+                                <div className="w-12 h-12 rounded-2xl glass flex items-center justify-center text-xl shrink-0 transition-transform duration-500 group-hover:scale-110 group-hover:bg-slate-800/80">
+                                    {f.icon}
+                                </div>
+                                <div>
+                                    <div className="font-bold text-slate-200 mb-1 tracking-tight transition-colors duration-300 group-hover:text-white">{f.title}</div>
+                                    <div className="text-sm text-slate-500 leading-relaxed">{f.desc}</div>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </motion.div>
 
-                <button
-                    onClick={handleQuickStartDemo}
-                    disabled={isLoading}
-                    style={{
-                        padding: '0.85rem 1.5rem',
-                        background: 'transparent',
-                        border: '2px solid var(--accent-emerald)',
-                        color: 'var(--accent-emerald)',
-                        borderRadius: '9px',
-                        fontFamily: 'inherit',
-                        fontSize: '0.95rem',
-                        fontWeight: 700,
-                        cursor: isLoading ? 'not-allowed' : 'pointer',
-                        width: 'fit-content',
-                        transition: 'all 0.2s',
-                    }}
-                >
-                    ⚡ Quick Start Demo (Auto-fill)
-                </button>
+                    <motion.button
+                        variants={itemVariants}
+                        onClick={handleQuickStartDemo}
+                        disabled={isLoading}
+                        className="group relative px-8 py-4 rounded-full overflow-hidden font-bold tracking-wide w-fit transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <div className="absolute inset-0 bg-slate-900 border border-slate-700 rounded-full transition-colors duration-300 group-hover:bg-slate-800"></div>
+                        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-gradient-to-r from-accent-blue/20 to-accent-purple/20 transition-opacity duration-500 rounded-full"></div>
+                        <span className="relative z-10 flex items-center gap-3 text-slate-300 group-hover:text-white transition-colors duration-300">
+                            <span className="text-xl group-hover:rotate-12 transition-transform duration-300">⚡</span> 
+                            Quick Start Demo
+                        </span>
+                    </motion.button>
+                </motion.div>
             </div>
 
             {/* ── RIGHT: Form Panel ─────────────────────────────────────────── */}
-            <div style={{
-                background: 'var(--bg-primary)',
-                display: 'flex',
-                flexDirection: 'column',
-                overflow: 'auto',
-                padding: '2.5rem 2rem',
-                gap: '1.5rem',
-            }}>
-                {/* Step tabs */}
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: '6px',
-                    background: 'var(--bg-elevated)',
-                    padding: '4px',
-                    borderRadius: '10px',
-                    border: '1px solid var(--bg-border)',
-                }}>
-                    {['Upload Details', 'Interview Settings'].map((label, i) => (
-                        <button key={i} onClick={() => setStep(i)} style={{
-                            padding: '9px',
-                            border: 'none',
-                            borderRadius: '7px',
-                            fontFamily: 'inherit',
-                            fontSize: '0.85rem',
-                            fontWeight: step === i ? 600 : 400,
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            background: step === i ? 'var(--bg-surface)' : 'transparent',
-                            color: step === i ? 'var(--text-primary)' : 'var(--text-muted)',
-                            boxShadow: step === i ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
-                        }}>{label}</button>
-                    ))}
-                </div>
-
-                {/* ── Step 0: Upload Details ─────────────────────────────────── */}
-                {step === 0 && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', animation: 'fadeInUp 0.3s ease both' }}>
-
-                        {/* CV Drop Zone */}
-                        <div>
-                            <label style={labelStyle}>Curriculum Vitae <span style={{ color: 'var(--accent-red)' }}>*</span></label>
-                            <div
-                                onClick={() => fileInputRef.current?.click()}
-                                onDrop={handleDrop}
-                                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-                                onDragLeave={() => setIsDragging(false)}
-                                style={{
-                                    border: `2px dashed ${isDragging ? 'var(--accent-blue)' : cvFile ? 'var(--accent-emerald)' : 'var(--bg-border)'}`,
-                                    borderRadius: '12px',
-                                    padding: '2rem 1.5rem',
-                                    cursor: 'pointer',
-                                    textAlign: 'center',
-                                    background: isDragging ? 'rgba(59,130,246,0.05)' : cvFile ? 'rgba(16,185,129,0.05)' : 'var(--bg-elevated)',
-                                    transition: 'all 0.2s',
-                                }}>
-                                <input
-                                    type="file"
-                                    accept="application/pdf"
-                                    ref={fileInputRef}
-                                    style={{ display: 'none' }}
-                                    onChange={(e) => handleFile(e.target.files?.[0])}
-                                />
-                                {cvFile ? (
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-                                        <div style={{
-                                            width: 44, height: 44, borderRadius: '50%',
-                                            background: 'rgba(16,185,129,0.15)',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        }}>
-                                            <svg width="22" height="22" fill="none" stroke="#10b981" strokeWidth="2.5" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                            </svg>
-                                        </div>
-                                        <span style={{ fontWeight: 600, color: 'var(--accent-emerald)', fontSize: '0.9rem' }}>
-                                            {cvFile.name}
-                                        </span>
-                                        <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                                            {(cvFile.size / 1024).toFixed(1)} KB · Click to change
-                                        </span>
-                                    </div>
-                                ) : (
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-                                        <div style={{
-                                            width: 44, height: 44, borderRadius: '50%',
-                                            background: 'var(--bg-surface)',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            border: '1px solid var(--bg-border)',
-                                        }}>
-                                            <svg width="20" height="20" fill="none" stroke="var(--text-muted)" strokeWidth="1.75" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                            </svg>
-                                        </div>
-                                        <div>
-                                            <div style={{ fontSize: '0.9rem', fontWeight: 500, color: 'var(--text-secondary)' }}>
-                                                <span style={{ color: 'var(--accent-blue)', fontWeight: 600 }}>Click to upload</span> or drag & drop
-                                            </div>
-                                            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 4 }}>PDF only · max 10 MB</div>
-                                        </div>
-                                    </div>
+            <div className="flex flex-col justify-center px-8 lg:px-20 py-10 relative z-10">
+                <div className="glass-panel p-8 lg:p-10 rounded-[2rem] relative overflow-hidden shadow-2xl">
+                    
+                    {/* Step tabs */}
+                    <div className="flex gap-2 p-1.5 bg-slate-900/60 backdrop-blur-md rounded-2xl border border-slate-800/50 mb-8 relative z-20">
+                        {['Upload Details', 'Interview Settings'].map((label, i) => (
+                            <button 
+                                key={i} 
+                                onClick={() => setStep(i)} 
+                                className={`flex-1 py-3 rounded-xl text-sm font-bold tracking-wide transition-all duration-300 relative ${
+                                    step === i ? 'text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'
+                                }`}
+                            >
+                                {step === i && (
+                                    <motion.div 
+                                        layoutId="activeTab" 
+                                        className="absolute inset-0 bg-slate-800 rounded-xl -z-10 border border-slate-700/50"
+                                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                                    />
                                 )}
-                            </div>
-                        </div>
-
-                        {/* Job Description */}
-                        <div>
-                            <label style={labelStyle}>Job Description <span style={{ color: 'var(--accent-red)' }}>*</span></label>
-                            <textarea
-                                rows={6}
-                                value={jobDescription}
-                                onChange={(e) => setJobDescription(e.target.value)}
-                                placeholder="Paste the full job description here. The AI uses it to generate relevant interview questions..."
-                                style={{ ...inputStyle, resize: 'vertical', minHeight: '140px', lineHeight: 1.6 }}
-                                onFocus={(e) => e.target.style.borderColor = 'var(--accent-blue)'}
-                                onBlur={(e) => e.target.style.borderColor = 'var(--bg-border)'}
-                            />
-                        </div>
-
-                        {/* Company Name */}
-                        <div>
-                            <label style={labelStyle}>Target Company <span style={{ color: 'var(--text-muted)', fontWeight: 400, textTransform: 'none' }}>(optional)</span></label>
-                            <input
-                                type="text"
-                                value={companyName}
-                                onChange={(e) => setCompanyName(e.target.value)}
-                                placeholder="e.g. Google, OpenAI, Stripe"
-                                style={inputStyle}
-                                onFocus={(e) => e.target.style.borderColor = 'var(--accent-blue)'}
-                                onBlur={(e) => e.target.style.borderColor = 'var(--bg-border)'}
-                            />
-                        </div>
-
-                        {/* Motivation Letter */}
-                        <div>
-                            <label style={labelStyle}>Cover Letter / Motivation <span style={{ color: 'var(--text-muted)', fontWeight: 400, textTransform: 'none' }}>(optional)</span></label>
-                            <textarea
-                                rows={4}
-                                value={motivationLetter}
-                                onChange={(e) => setMotivationLetter(e.target.value)}
-                                placeholder="Paste your cover letter or a brief motivation statement..."
-                                style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.6 }}
-                                onFocus={(e) => e.target.style.borderColor = 'var(--accent-blue)'}
-                                onBlur={(e) => e.target.style.borderColor = 'var(--bg-border)'}
-                            />
-                        </div>
-
-                        <button
-                            onClick={() => setStep(1)}
-                            disabled={!canProceed}
-                            style={{
-                                padding: '0.75rem',
-                                background: canProceed ? 'var(--accent-blue)' : 'var(--bg-elevated)',
-                                color: canProceed ? '#fff' : 'var(--text-muted)',
-                                border: 'none',
-                                borderRadius: '9px',
-                                fontFamily: 'inherit',
-                                fontSize: '0.9375rem',
-                                fontWeight: 600,
-                                cursor: canProceed ? 'pointer' : 'not-allowed',
-                                transition: 'all 0.2s',
-                            }}>
-                            Continue to Interview Settings →
-                        </button>
+                                {label}
+                            </button>
+                        ))}
                     </div>
-                )}
 
-                {/* ── Step 1: Configure ──────────────────────────────────────── */}
-                {step === 1 && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', animation: 'fadeInUp 0.3s ease both' }}>
-
-                        {/* Interview Length */}
-                        <div>
-                            <label style={labelStyle}>Interview Length</label>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                {LENGTH_OPTIONS.map(opt => (
-                                    <button key={opt.value} onClick={() => setInterviewLength(opt.value)} style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        padding: '0.875rem 1.125rem',
-                                        background: interviewLength === opt.value ? 'rgba(59,130,246,0.12)' : 'var(--bg-elevated)',
-                                        border: `1px solid ${interviewLength === opt.value ? 'var(--accent-blue)' : 'var(--bg-border)'}`,
-                                        borderRadius: '9px',
-                                        cursor: 'pointer',
-                                        textAlign: 'left',
-                                        fontFamily: 'inherit',
-                                        transition: 'all 0.15s',
-                                        width: '100%',
-                                    }}>
-                                        <div>
-                                            <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{opt.label}</div>
-                                            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>{opt.sub}</div>
+                    <div className="relative z-20">
+                        <AnimatePresence mode="wait">
+                            {/* ── Step 0: Upload Details ─────────────────────────────────── */}
+                            {step === 0 && (
+                                <motion.div 
+                                    key="step0"
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: 20 }}
+                                    transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                                    className="flex flex-col gap-6"
+                                >
+                                    {/* CV Drop Zone */}
+                                    <div className="group relative">
+                                        <label className={labelClass}>Curriculum Vitae <span className="text-accent-red">*</span></label>
+                                        <div
+                                            onClick={() => fileInputRef.current?.click()}
+                                            onDrop={handleDrop}
+                                            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                                            onDragLeave={() => setIsDragging(false)}
+                                            className={`relative overflow-hidden border-2 border-dashed rounded-[1rem] p-8 text-center cursor-pointer transition-all duration-500 ${
+                                                isDragging ? 'border-accent-blue bg-accent-blue/5' : 
+                                                cvFile ? 'border-accent-emerald bg-accent-emerald/5' : 
+                                                'border-slate-700/50 bg-slate-900/50 hover:border-slate-500 hover:bg-slate-800/50'
+                                            }`}
+                                        >
+                                            <input
+                                                type="file"
+                                                accept="application/pdf"
+                                                ref={fileInputRef}
+                                                className="hidden"
+                                                onChange={(e) => handleFile(e.target.files?.[0])}
+                                            />
+                                            {cvFile ? (
+                                                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center gap-3">
+                                                    <div className="w-12 h-12 rounded-full bg-accent-emerald/20 flex items-center justify-center">
+                                                        <svg width="24" height="24" fill="none" stroke="var(--accent-emerald)" strokeWidth="2.5" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                        </svg>
+                                                    </div>
+                                                    <span className="font-bold text-accent-emerald text-sm">{cvFile.name}</span>
+                                                    <span className="text-xs text-slate-500">{(cvFile.size / 1024).toFixed(1)} KB · Click to change</span>
+                                                </motion.div>
+                                            ) : (
+                                                <div className="flex flex-col items-center gap-3">
+                                                    <div className="w-12 h-12 rounded-full glass flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
+                                                        <svg width="24" height="24" fill="none" stroke="currentColor" className="text-slate-400" strokeWidth="2" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                                        </svg>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-sm font-semibold text-slate-300">
+                                                            <span className="text-accent-blue">Click to upload</span> or drag & drop
+                                                        </div>
+                                                        <div className="text-xs text-slate-500 mt-1">PDF only · max 10 MB</div>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
-                                        <div style={{
-                                            width: 18, height: 18, borderRadius: '50%',
-                                            border: `2px solid ${interviewLength === opt.value ? 'var(--accent-blue)' : 'var(--bg-muted)'}`,
-                                            background: interviewLength === opt.value ? 'var(--accent-blue)' : 'transparent',
-                                            flexShrink: 0,
-                                        }}></div>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
+                                    </div>
 
-                        {/* Interview Mode */}
-                        <div>
-                            <label style={labelStyle}>Interview Mode</label>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                {MODE_OPTIONS.map(opt => (
-                                    <button key={opt.value} onClick={() => setInterviewMode(opt.value)} style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '12px',
-                                        padding: '0.875rem 1.125rem',
-                                        background: interviewMode === opt.value ? 'rgba(59,130,246,0.12)' : 'var(--bg-elevated)',
-                                        border: `1px solid ${interviewMode === opt.value ? 'var(--accent-blue)' : 'var(--bg-border)'}`,
-                                        borderRadius: '9px',
-                                        cursor: 'pointer',
-                                        textAlign: 'left',
-                                        fontFamily: 'inherit',
-                                        transition: 'all 0.15s',
-                                        width: '100%',
-                                    }}>
-                                        <span style={{ fontSize: '1.25rem' }}>{opt.icon}</span>
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{opt.label}</div>
-                                            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>{opt.desc}</div>
+                                    {/* Job Description */}
+                                    <div className="group">
+                                        <label className={labelClass}>Job Description <span className="text-accent-red">*</span></label>
+                                        <textarea
+                                            rows={5}
+                                            value={jobDescription}
+                                            onChange={(e) => setJobDescription(e.target.value)}
+                                            placeholder="Paste the full job description here. The AI uses it to generate relevant interview questions..."
+                                            className={`${inputClass} resize-y min-h-[120px]`}
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {/* Company Name */}
+                                        <div className="group">
+                                            <label className={labelClass}>Company <span className="text-slate-600 font-normal normal-case">(optional)</span></label>
+                                            <input
+                                                type="text"
+                                                value={companyName}
+                                                onChange={(e) => setCompanyName(e.target.value)}
+                                                placeholder="e.g. Google"
+                                                className={inputClass}
+                                            />
                                         </div>
-                                        <div style={{
-                                            width: 18, height: 18, borderRadius: '50%',
-                                            border: `2px solid ${interviewMode === opt.value ? 'var(--accent-blue)' : 'var(--bg-muted)'}`,
-                                            background: interviewMode === opt.value ? 'var(--accent-blue)' : 'transparent',
-                                            flexShrink: 0,
-                                        }}></div>
+
+                                        {/* Motivation Letter */}
+                                        <div className="group">
+                                            <label className={labelClass}>Motivation <span className="text-slate-600 font-normal normal-case">(optional)</span></label>
+                                            <input
+                                                type="text"
+                                                value={motivationLetter}
+                                                onChange={(e) => setMotivationLetter(e.target.value)}
+                                                placeholder="Brief cover letter snippet..."
+                                                className={inputClass}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={() => setStep(1)}
+                                        disabled={!canProceed}
+                                        className={`mt-4 w-full py-4 rounded-xl font-bold tracking-wide transition-all duration-300 ${
+                                            canProceed ? 'bg-slate-800 text-white hover:bg-slate-700 shadow-lg' : 'bg-slate-900/50 text-slate-600 cursor-not-allowed'
+                                        }`}
+                                    >
+                                        Continue Settings →
                                     </button>
-                                ))}
-                            </div>
-                        </div>
+                                </motion.div>
+                            )}
 
-                        {error && (
-                            <div style={{
-                                padding: '0.875rem 1rem',
-                                background: 'rgba(239,68,68,0.1)',
-                                border: '1px solid rgba(239,68,68,0.3)',
-                                borderRadius: '9px',
-                                color: '#fca5a5',
-                                fontSize: '0.875rem',
-                            }}>
-                                {error}
-                            </div>
-                        )}
+                            {/* ── Step 1: Configure ──────────────────────────────────────── */}
+                            {step === 1 && (
+                                <motion.div 
+                                    key="step1"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                                    className="flex flex-col gap-8"
+                                >
+                                    {/* Interview Length */}
+                                    <div>
+                                        <label className={labelClass}>Interview Length</label>
+                                        <div className="grid grid-cols-1 gap-3">
+                                            {LENGTH_OPTIONS.map(opt => (
+                                                <button 
+                                                    key={opt.value} 
+                                                    onClick={() => setInterviewLength(opt.value)} 
+                                                    className={`group relative overflow-hidden flex items-center justify-between px-5 py-4 rounded-[14px] cursor-pointer text-left transition-all duration-300 ${
+                                                        interviewLength === opt.value ? 'bg-accent-blue/10 border border-accent-blue/50' : 'bg-slate-900/50 border border-slate-800/50 hover:bg-slate-800/80'
+                                                    }`}
+                                                >
+                                                    {interviewLength === opt.value && (
+                                                        <div className="absolute inset-0 bg-gradient-to-r from-accent-blue/5 to-transparent pointer-events-none" />
+                                                    )}
+                                                    <div className="relative z-10">
+                                                        <div className={`font-bold text-sm transition-colors duration-300 ${interviewLength === opt.value ? 'text-accent-blue' : 'text-slate-300 group-hover:text-white'}`}>{opt.label}</div>
+                                                        <div className="text-xs text-slate-500 mt-1">{opt.sub}</div>
+                                                    </div>
+                                                    <div className={`relative z-10 w-5 h-5 rounded-full border-2 shrink-0 transition-all duration-300 ${
+                                                        interviewLength === opt.value ? 'border-accent-blue bg-accent-blue scale-110 shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'border-slate-600 bg-transparent'
+                                                    }`} />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
 
-                        <button
-                            onClick={handleSubmit}
-                            disabled={isLoading}
-                            style={{
-                                padding: '0.9rem',
-                                background: isLoading ? 'var(--bg-elevated)' : 'linear-gradient(135deg, #3b82f6, #6366f1)',
-                                color: isLoading ? 'var(--text-muted)' : '#fff',
-                                border: 'none',
-                                borderRadius: '9px',
-                                fontFamily: 'inherit',
-                                fontSize: '1rem',
-                                fontWeight: 700,
-                                cursor: isLoading ? 'not-allowed' : 'pointer',
-                                letterSpacing: '-0.2px',
-                                boxShadow: isLoading ? 'none' : '0 4px 20px rgba(99,102,241,0.3)',
-                                transition: 'all 0.2s',
-                            }}>
-                            {isLoading ? 'Uploading & Analysing...' : '🚀  Begin Interview Setup'}
-                        </button>
+                                    {/* Interview Mode */}
+                                    <div>
+                                        <label className={labelClass}>Interview Mode</label>
+                                        <div className="grid grid-cols-1 gap-3">
+                                            {MODE_OPTIONS.map(opt => (
+                                                <button 
+                                                    key={opt.value} 
+                                                    onClick={() => setInterviewMode(opt.value)} 
+                                                    className={`group relative overflow-hidden flex items-center gap-4 px-5 py-4 rounded-[14px] cursor-pointer text-left transition-all duration-300 ${
+                                                        interviewMode === opt.value ? 'bg-accent-purple/10 border border-accent-purple/50' : 'bg-slate-900/50 border border-slate-800/50 hover:bg-slate-800/80'
+                                                    }`}
+                                                >
+                                                    {interviewMode === opt.value && (
+                                                        <div className="absolute inset-0 bg-gradient-to-r from-accent-purple/5 to-transparent pointer-events-none" />
+                                                    )}
+                                                    <span className="relative z-10 text-2xl drop-shadow-md">{opt.icon}</span>
+                                                    <div className="relative z-10 flex-1">
+                                                        <div className={`font-bold text-sm transition-colors duration-300 ${interviewMode === opt.value ? 'text-accent-purple' : 'text-slate-300 group-hover:text-white'}`}>{opt.label}</div>
+                                                        <div className="text-xs text-slate-500 mt-1">{opt.desc}</div>
+                                                    </div>
+                                                    <div className={`relative z-10 w-5 h-5 rounded-full border-2 shrink-0 transition-all duration-300 ${
+                                                        interviewMode === opt.value ? 'border-accent-purple bg-accent-purple scale-110 shadow-[0_0_10px_rgba(139,92,246,0.5)]' : 'border-slate-600 bg-transparent'
+                                                    }`} />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
 
-                        <button onClick={() => setStep(0)} style={{
-                            background: 'none', border: 'none', color: 'var(--text-muted)',
-                            fontSize: '0.85rem', cursor: 'pointer', fontFamily: 'inherit', padding: 0,
-                        }}>
-                            ← Back to upload details
-                        </button>
+                                    {error && (
+                                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="px-5 py-4 bg-accent-red/10 border border-accent-red/30 rounded-[14px] text-accent-red text-sm font-medium">
+                                            {error}
+                                        </motion.div>
+                                    )}
+
+                                    <div className="flex flex-col gap-4 mt-2">
+                                        <button
+                                            onClick={handleSubmit}
+                                            disabled={isLoading}
+                                            className={`relative w-full py-4 rounded-xl font-bold tracking-wide transition-all duration-500 overflow-hidden group ${
+                                                isLoading ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-slate-100 text-slate-900 shadow-[0_0_40px_rgba(255,255,255,0.15)] hover:shadow-[0_0_60px_rgba(255,255,255,0.25)] hover:scale-[1.02]'
+                                            }`}
+                                        >
+                                            {!isLoading && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />}
+                                            <span className="relative z-10">{isLoading ? 'Processing...' : 'Launch Interview'}</span>
+                                        </button>
+
+                                        <button onClick={() => setStep(0)} className="text-slate-500 hover:text-slate-300 text-xs font-bold uppercase tracking-widest transition-colors duration-300">
+                                            ← Back
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
-                )}
+                </div>
             </div>
         </div>
     );

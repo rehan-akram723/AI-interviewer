@@ -10,15 +10,15 @@
 @tailwind utilities;
 
 :root {
-  --bg-primary: #09090b;
-  --bg-surface: #111113;
-  --bg-elevated: #18181b;
-  --bg-border: #27272a;
-  --bg-muted: #3f3f46;
+  --bg-primary: #020617; /* slate-950 */
+  --bg-surface: #0f172a; /* slate-900 */
+  --bg-elevated: #151e2e; /* slate-850 */
+  --bg-border: rgba(255, 255, 255, 0.08);
+  --bg-muted: #1e293b; /* slate-800 */
 
-  --text-primary: #fafafa;
-  --text-secondary: #a1a1aa;
-  --text-muted: #71717a;
+  --text-primary: #f8fafc; /* slate-50 */
+  --text-secondary: #94a3b8; /* slate-400 */
+  --text-muted: #64748b; /* slate-500 */
 
   --accent-blue: #3b82f6;
   --accent-blue-hover: #2563eb;
@@ -27,10 +27,10 @@
   --accent-red: #ef4444;
   --accent-purple: #8b5cf6;
 
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 18px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
 }
 
 *, *::before, *::after {
@@ -72,21 +72,30 @@ body {
 
 /* ── Utility classes ─────────────────────────────────────────────────────────── */
 .glass {
-  background: rgba(24, 24, 27, 0.7);
+  background: rgba(2, 6, 23, 0.4); /* slate-950/40 */
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 50px -12px rgba(255, 255, 255, 0.05);
+}
+
+.glass-panel {
+  background: rgba(15, 23, 42, 0.6); /* slate-900/60 */
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  background: linear-gradient(to right, #ffffff, #e2e8f0, #94a3b8);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-.glow-blue {
-  box-shadow: 0 0 20px rgba(59, 130, 246, 0.15), 0 0 40px rgba(59, 130, 246, 0.05);
+.glow-accent {
+  box-shadow: 0 0 30px rgba(59, 130, 246, 0.2), 0 0 60px rgba(139, 92, 246, 0.1);
 }
 
 /* ── Input base ──────────────────────────────────────────────────────────────── */
@@ -186,3 +195,97 @@ body {
   animation: shimmer 1.5s infinite;
   border-radius: var(--radius-sm);
 }
+
+/* ── New: Interview Room visual design ──────────────────────────────────────── */
+
+/* Mesh gradient background for the interview room */
+.interview-bg {
+  background-color: var(--bg-primary);
+  background-image:
+    radial-gradient(ellipse 80% 50% at 20% 40%, rgba(59, 130, 246, 0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 60% at 80% 60%, rgba(139, 92, 246, 0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 50% 90%, rgba(16, 185, 129, 0.04) 0%, transparent 60%);
+}
+
+/* Glassmorphism card */
+.glass-card {
+  background: rgba(24, 24, 27, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+/* Glowing border on focus/active elements */
+.glow-border-blue {
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.15), 0 0 20px rgba(59, 130, 246, 0.08);
+}
+
+/* Question text reveal animation */
+@keyframes questionReveal {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+.question-reveal {
+  animation: questionReveal 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Coaching card slide-in */
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.slide-in-right {
+  animation: slideInRight 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Waveform bar animation */
+@keyframes wavebar {
+  0%, 100% { transform: scaleY(0.3); }
+  50%       { transform: scaleY(1); }
+}
+
+.wavebar {
+  width: 3px;
+  border-radius: 2px;
+  transform-origin: bottom;
+  animation: wavebar 0.9s ease-in-out infinite;
+}
+
+/* Recording pulse ring */
+@keyframes recordPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+  70%  { box-shadow: 0 0 0 14px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.record-pulse {
+  animation: recordPulse 1.5s ease-out infinite;
+}
+
+/* Score ring fill animation */
+@keyframes scoreFill {
+  from { stroke-dashoffset: 314; }
+}
+
+/* Typing indicator dots */
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30%            { transform: translateY(-6px); }
+}
+
+.typing-dot {
+  animation: typingBounce 1.2s ease-in-out infinite;
+}
+
