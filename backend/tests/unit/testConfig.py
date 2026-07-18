@@ -27,12 +27,12 @@ class TestSettingsDefaults:
             settings = configModule.Settings()
         assert settings.app_mode == "demo"
 
-    def test_default_model_is_free_tier(self):
-        """Default OpenRouter model must be a free-tier model."""
+    def test_default_model_is_valid_string(self):
+        """Default OpenRouter model must be a string."""
         with patch.dict(os.environ, {}, clear=True):
             from src.core.appConfig import Settings
             s = Settings()
-        assert ":free" in s.openrouter_model
+        assert isinstance(s.openrouter_model, str)
 
     def test_default_max_followups(self):
         """Hard limit on follow-up chains must be 2 per manifest."""

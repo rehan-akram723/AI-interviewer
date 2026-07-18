@@ -88,6 +88,9 @@ def minimal_session() -> dict:
         "step_log": ["[CONFTEST] Minimal test session created."],
 
         # Ephemeral runtime input fields (None by default in test context)
+        "next_question": None,
+        "suggest_followup": False,
+        "should_advance": False,
         "cv_bytes_input": None,
         "jd_text_input": None,
         "motivation_text_input": None,
