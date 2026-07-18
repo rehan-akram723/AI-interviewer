@@ -18,6 +18,7 @@
 
 import json
 import re
+import time
 from typing import Optional, Union
 from openai import OpenAI
 
@@ -45,6 +46,7 @@ def callLlm(
     temperature: float = 0.2,
     maxTokens: int = 2048,
     jsonMode: bool = False,
+    maxRetries: int = 3,
 ) -> Union[str, dict]:
     """
     Call the LLM via OpenRouter (OpenAI-compatible API).
@@ -57,6 +59,7 @@ def callLlm(
         maxTokens:    Maximum tokens to generate.
         jsonMode:     If True, instructs the model to return valid JSON only,
                       then parses and returns a dict. Raises ValueError on parse failure.
+        maxRetries:   Number of retries on empty or non-JSON responses.
 
     Returns:
         str if jsonMode=False, dict if jsonMode=True.
@@ -80,33 +83,52 @@ def callLlm(
             "No markdown, no explanation, no code fences. Raw JSON only."
         )
 
-    response = _client.chat.completions.create(
-        model=selectedModel,
-        messages=messages,
-        temperature=temperature,
-        max_tokens=maxTokens,
-    )
+    lastError = None
+    for attempt in range(1, maxRetries + 1):
+        response = _client.chat.completions.create(
+            model=selectedModel,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=maxTokens,
+        )
 
-    rawText = response.choices[0].message.content or ""
+        rawText = response.choices[0].message.content or ""
 
-    if not jsonMode:
-        return rawText.strip()
+        if not jsonMode:
+            if rawText.strip():
+                return rawText.strip()
+            # Empty response on non-JSON — retry
+            time.sleep(attempt * 1.5)
+            continue
 
-    # ── JSON parsing with cleanup ──────────────────────────────────────────────
-    # Some models wrap output in ```json ... ``` even when told not to.
-    cleaned = rawText.strip()
-    # Strip markdown code fences if present
-    fencePattern = r"^```(?:json)?\s*([\s\S]*?)\s*```$"
-    match = re.match(fencePattern, cleaned, re.MULTILINE)
-    if match:
-        cleaned = match.group(1).strip()
+        # ── JSON parsing with cleanup ──────────────────────────────────────────────
+        # Some models wrap output in ```json ... ``` even when told not to.
+        cleaned = rawText.strip()
+        if not cleaned:
+            # Model returned empty — wait and retry
+            time.sleep(attempt * 1.5)
+            lastError = ValueError(
+                f"LLM returned empty response (attempt {attempt}/{maxRetries}).\n"
+                f"Model: {selectedModel}"
+            )
+            continue
 
-    try:
-        return json.loads(cleaned)
-    except json.JSONDecodeError as e:
-        raise ValueError(
-            f"LLM returned non-JSON output.\n"
-            f"Model: {selectedModel}\n"
-            f"Raw response: {rawText[:500]}\n"
-            f"Parse error: {e}"
-        ) from e
+        # Strip markdown code fences if present
+        fencePattern = r"^```(?:json)?\s*([\s\S]*?)\s*```$"
+        match = re.match(fencePattern, cleaned, re.MULTILINE)
+        if match:
+            cleaned = match.group(1).strip()
+
+        try:
+            return json.loads(cleaned)
+        except json.JSONDecodeError as e:
+            lastError = ValueError(
+                f"LLM returned non-JSON output.\n"
+                f"Model: {selectedModel}\n"
+                f"Raw response: {rawText[:500]}\n"
+                f"Parse error: {e}"
+            )
+            time.sleep(attempt * 1.5)
+
+    raise lastError or ValueError(f"LLM failed after {maxRetries} attempts. Model: {selectedModel}")
+

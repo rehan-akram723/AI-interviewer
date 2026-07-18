@@ -81,11 +81,13 @@ async def generateReport(sessionId: str) -> JSONResponse:
     """
     Trigger report generation for a completed session.
 
-    This endpoint is called after the interview is marked "completed" to
-    run the reportGraph (evaluatorAgent → pdfGeneratorNode) asynchronously.
+    This endpoint is idempotent — if a generation task is already in-flight for
+    this session it returns 202 without launching a second task, preventing the
+    double-processing race condition.
 
     Returns:
-        202 Accepted immediately; the client polls GET /report for the result.
+        202 Accepted immediately; the client is notified via WebSocket report_ready
+        event when the report is done. Polling GET /report is a fallback.
     """
     session = await _resolveSession(sessionId)
     sessionStatus = session.get("status", "")
@@ -104,6 +106,19 @@ async def generateReport(sessionId: str) -> JSONResponse:
             },
         )
 
+    # ── Idempotency check: block duplicate in-flight tasks ────────────────────
+    if sessionManager.is_report_generating(sessionId):
+        logger.info("generateReport: already in-flight for session %s — skipping duplicate", sessionId)
+        return JSONResponse(
+            status_code=status.HTTP_202_ACCEPTED,
+            content={
+                "session_id": sessionId,
+                "status": "generating",
+                "message": "Report generation already in progress.",
+            },
+        )
+
+    sessionManager.mark_report_generating(sessionId)
     asyncio.create_task(_runReportGraph(sessionId=sessionId, session=session))
 
     return JSONResponse(
@@ -111,14 +126,15 @@ async def generateReport(sessionId: str) -> JSONResponse:
         content={
             "session_id": sessionId,
             "status": "generating",
-            "message": "Report generation started. Poll GET /report for results.",
+            "message": "Report generation started. You will be notified via WebSocket.",
         },
     )
 
 
 async def _runReportGraph(sessionId: str, session: dict) -> None:
-    """Background worker: runs the reportGraph and persists the result."""
+    """Background worker: runs the reportGraph, persists the result, and notifies the client."""
     from src.graph.reportGraph import reportGraph
+    from src.api.websockets.interviewWs import pushToClientSync
 
     loop = asyncio.get_event_loop()
     try:
@@ -132,6 +148,12 @@ async def _runReportGraph(sessionId: str, session: dict) -> None:
         await sessionManager.saveSessionAsync(updatedSession)
         logger.info("Report graph complete for session %s", sessionId)
 
+        # Notify the client so it can stop polling immediately
+        try:
+            pushToClientSync(sessionId, {"type": "report_ready", "payload": {}})
+        except Exception:
+            pass  # Client may have disconnected; they can still poll
+
     except Exception as exc:
         logger.error("Report graph failed for session %s: %s", sessionId, exc, exc_info=True)
         try:
@@ -143,3 +165,6 @@ async def _runReportGraph(sessionId: str, session: dict) -> None:
                 await sessionManager.saveSessionAsync(failedSession)
         except Exception:
             pass
+    finally:
+        sessionManager.clear_report_generating(sessionId)
+

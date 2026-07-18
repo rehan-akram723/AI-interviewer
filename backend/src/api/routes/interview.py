@@ -37,6 +37,7 @@ from src.core.exceptions import (
 from src.modules.interviewEngine.sessionManager import sessionManager
 from src.modules.analysis.audioAnalyzer import analyzeAudio
 from src.modules.analysis.facialPlaceholder import processFacialData
+from src.modules.analysis.sttService import transcribe
 from src.graph.interviewGraph import interviewGraph
 from src.agents.conductorAgent import conductorAgent
 
@@ -85,28 +86,7 @@ async def _resolveSession(sessionId: str) -> dict:
 
 # ── Routes ─────────────────────────────────────────────────────────────────────
 
-def prefetch_next_question(session_id: str):
-    from src.modules.interviewEngine.flowController import getCurrentPhase
-    try:
-        state = sessionManager.getSession(session_id)
-        if not state: return
-        phase = getCurrentPhase(state)
-        if phase in ("icebreaker", "cv_deep_dive"):
-            import copy
-            state_copy = copy.deepcopy(state)
-            
-            # The conductor agent needs to accept a next_question_index override parameter for the prefetch to work.
-            # We pass index + 1 by mutating a deepcopy of the state, so we don't mutate the actual session state,
-            # and we avoid modifying the conductor agent itself as per the constraints.
-            state_copy["current_question_index"] = state_copy.get("current_question_index", 0) + 1
-            
-            # Run conductor
-            res = conductorAgent(state_copy)
-            if res and res.get("next_question"):
-                # Store the entire result so we preserve the incremented index and asked_questions updates
-                sessionManager.store_prefetched_question(session_id, res)
-    except Exception as exc:
-        logger.error("Prefetch failed silently: %s", exc)
+
 
 @router.get("/sessions/{sessionId}/question")
 async def getCurrentQuestion(sessionId: str, background_tasks: BackgroundTasks) -> JSONResponse:
@@ -146,20 +126,6 @@ async def getCurrentQuestion(sessionId: str, background_tasks: BackgroundTasks) 
             "question": currentQ,
         })
         
-    prefetched_result = sessionManager.pop_prefetched_question(sessionId)
-    if prefetched_result:
-        sessionManager.updateSession(sessionId, prefetched_result)
-        # We need to save since we updated state
-        updatedSession = sessionManager.getSession(sessionId)
-        await sessionManager.saveSessionAsync(updatedSession)
-        
-        background_tasks.add_task(prefetch_next_question, sessionId)
-        return JSONResponse(content={
-            "session_id": sessionId,
-            "status": "in_progress",
-            "question": prefetched_result["next_question"],
-        })
-
     # No pending question — run conductorAgent to deliver the next one
     loop = asyncio.get_event_loop()
     try:
@@ -181,8 +147,6 @@ async def getCurrentQuestion(sessionId: str, background_tasks: BackgroundTasks) 
                 "question": None,
                 "message": "Interview is complete.",
             })
-            
-        background_tasks.add_task(prefetch_next_question, sessionId)
 
         return JSONResponse(content={
             "session_id": sessionId,
@@ -238,9 +202,32 @@ async def submitAnswer(sessionId: str, payload: AnswerSubmission, background_tas
     now = datetime.now(timezone.utc).isoformat()
     answerIndex = len(session.get("answers", []))
 
+    # ── Decode audio bytes early so both STT and audio analysis share them ────
+    audioBytes: Optional[bytes] = None
+    if payload.audioBase64:
+        import base64 as _base64
+        try:
+            audioBytes = _base64.b64decode(payload.audioBase64)
+        except Exception:
+            logger.warning("submitAnswer: could not decode audioBase64 for session %s", sessionId)
+
+    loop = asyncio.get_event_loop()
+
+    # ── Transcribe audio → text (Whisper in production, passthrough in demo) ──
+    # This is the critical step: without it, voice answers are stored as ""
+    # and every downstream agent receives an empty answer.
+    transcribedText = await loop.run_in_executor(
+        None,
+        lambda: transcribe(audioBytes=audioBytes, textInput=payload.text),
+    )
+    logger.info(
+        "submitAnswer: transcription for session %s: '%s...'",
+        sessionId, transcribedText[:60],
+    )
+
     answerDict = {
         "question_index": payload.questionIndex,
-        "text": payload.text.strip(),
+        "text": transcribedText,
         "audio_path": None,
         "answered_at": now,
         "duration_seconds": payload.durationSeconds,
@@ -250,7 +237,7 @@ async def submitAnswer(sessionId: str, payload: AnswerSubmission, background_tas
     currentAnswers = list(session.get("answers", []))
     currentAnswers.append(answerDict)
     currentTranscript = list(session.get("transcript", []))
-    currentTranscript.append(payload.text.strip())
+    currentTranscript.append(transcribedText)
 
     sessionManager.updateSession(sessionId, {
         "answers": currentAnswers,
@@ -258,21 +245,12 @@ async def submitAnswer(sessionId: str, payload: AnswerSubmission, background_tas
     })
     session = sessionManager.getSession(sessionId)
 
-    # ── Audio analysis ─────────────────────────────────────────────────────────
-    audioBytes: Optional[bytes] = None
-    if payload.audioBase64:
-        import base64
-        try:
-            audioBytes = base64.b64decode(payload.audioBase64)
-        except Exception:
-            logger.warning("submitAnswer: could not decode audioBase64 for session %s", sessionId)
-
-    loop = asyncio.get_event_loop()
+    # ── Audio analysis (reuses already-decoded audioBytes from above) ─────────
     audioMetrics = await loop.run_in_executor(
         None,
         lambda: analyzeAudio(
             audioBytes=audioBytes,
-            transcript=payload.text,
+            transcript=transcribedText,
             answerIndex=answerIndex,
         ),
     )
@@ -297,69 +275,33 @@ async def submitAnswer(sessionId: str, payload: AnswerSubmission, background_tas
     })
     session = sessionManager.getSession(sessionId)
 
-    # ── Run followUpAgent turn ───────────────────────────────────────────────
-    from src.agents.followUpAgent import followUpAgent
-    try:
-        graphResult: dict = await loop.run_in_executor(
-            None,
-            lambda: followUpAgent(session),
-        )
-    except Exception as exc:
-        logger.error(
-            "submitAnswer: followUpAgent failed for session %s: %s",
-            sessionId, exc, exc_info=True,
-        )
-        return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"error": "GRAPH_FAILED", "message": str(exc)},
-        )
-
-    # ── Merge result and persist ───────────────────────────────────────────────
-    sessionManager.updateSession(sessionId, graphResult)
-    updatedSession = sessionManager.getSession(sessionId)
-    nextQuestion = graphResult.get("next_question")
-    
-    # If no follow-up was generated, we must retrieve the next question
-    if not nextQuestion:
-        prefetched_result = sessionManager.pop_prefetched_question(sessionId)
-        if prefetched_result:
-            sessionManager.updateSession(sessionId, prefetched_result)
-            updatedSession = sessionManager.getSession(sessionId)
-            nextQuestion = prefetched_result.get("next_question")
-        else:
-            conductor_res = await loop.run_in_executor(None, lambda: conductorAgent(updatedSession))
-            sessionManager.updateSession(sessionId, conductor_res)
-            updatedSession = sessionManager.getSession(sessionId)
-            nextQuestion = conductor_res.get("next_question")
-
-    await sessionManager.saveSessionAsync(updatedSession)
-
-    isComplete = updatedSession.get("status") == "completed"
+    # ── Dispatch Background Pipeline ──────────────────────────────────────────
+    background_tasks.add_task(run_full_pipeline, session, sessionId)
 
     logger.info(
-        "submitAnswer: turn complete | session=%s | answer_index=%d | complete=%s",
-        sessionId, answerIndex, isComplete,
+        "submitAnswer: HTTP response dispatched immediately | session=%s | answer_index=%d",
+        sessionId, answerIndex,
     )
-    
-    background_tasks.add_task(run_coaching_and_calibration, updatedSession, sessionId)
-    if not isComplete:
-        background_tasks.add_task(prefetch_next_question, sessionId)
 
     return JSONResponse(content={
         "session_id": sessionId,
-        "status": updatedSession.get("status"),
-        "is_complete": isComplete,
+        "status": "processing",
+        "is_complete": False,
         "coaching_feedback": None,
         "coaching_pending": True,
-        "next_question": nextQuestion,
+        "next_question": None,
         "audio_metrics": audioMetricsDict,
     })
 
-async def run_coaching_and_calibration(state: dict, session_id: str):
+async def run_full_pipeline(state: dict, session_id: str):
     from src.agents.liveCoachAgent import liveCoachAgent
     from src.agents.difficultyCalibratorAgent import difficultyCalibratorAgent
+    from src.agents.followUpAgent import followUpAgent
+    from src.agents.conductorAgent import conductorAgent
+    from src.api.websockets.interviewWs import pushToClientSync
     loop = asyncio.get_event_loop()
     try:
+        # 1. Coaching and Calibration (Concurrent)
         coach_res, calib_res = await asyncio.gather(
             loop.run_in_executor(None, liveCoachAgent, state),
             loop.run_in_executor(None, difficultyCalibratorAgent, state)
@@ -373,9 +315,32 @@ async def run_coaching_and_calibration(state: dict, session_id: str):
         if "difficulty_dimensions" in calib_res:
             updates["difficulty_dimensions"] = calib_res["difficulty_dimensions"]
             
-        if updates:
-            updated_session = sessionManager.updateSession(session_id, updates)
-            asyncio.create_task(sessionManager.saveSessionAsync(updated_session))
+        updated_session = sessionManager.updateSession(session_id, updates)
+        
+        # 2. Follow-Up Agent
+        followup_res = await loop.run_in_executor(None, lambda: followUpAgent(updated_session))
+        updated_session = sessionManager.updateSession(session_id, followup_res)
+        next_question = followup_res.get("next_question")
+        
+        # 3. Conductor Agent (if no follow-up was generated)
+        if not next_question:
+            conductor_res = await loop.run_in_executor(None, lambda: conductorAgent(updated_session))
+            updated_session = sessionManager.updateSession(session_id, conductor_res)
+            next_question = conductor_res.get("next_question")
+
+        await sessionManager.saveSessionAsync(updated_session)
+
+        # 4. Push Results via WebSocket
+        is_complete = updated_session.get("status") == "completed"
+        if is_complete or not next_question:
+            pushToClientSync(session_id, {"type": "interview_complete", "payload": {}})
+        else:
+            pushToClientSync(session_id, {"type": "next_question", "payload": next_question})
             
     except Exception as exc:
-        logger.error("Background coaching failed: %s", exc, exc_info=True)
+        logger.error("Background pipeline failed: %s", exc, exc_info=True)
+        try:
+            pushToClientSync(session_id, {"type": "error", "payload": {"message": str(exc)}})
+        except Exception:
+            pass
+

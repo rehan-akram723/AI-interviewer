@@ -8,7 +8,8 @@
 # Naming note: Field names are snake_case (JSON-compatible). File/module is camelCase.
 # ─────────────────────────────────────────────────────────────────────────────
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
+from pydantic.alias_generators import to_camel
 from typing import Optional, Literal, List
 
 
@@ -17,6 +18,8 @@ class Question(BaseModel):
     A single interview question delivered to the candidate.
     Stored in InterviewSession.asked_questions.
     """
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
     index: int
     """0-based position in the overall interview sequence."""
 
@@ -53,6 +56,8 @@ class Answer(BaseModel):
     A candidate's answer to a single question.
     Stored in InterviewSession.answers (parallel to asked_questions).
     """
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
     question_index: int
     """Index of the Question this answer responds to."""
 
@@ -75,6 +80,8 @@ class CoachingFeedback(BaseModel):
     Stored in InterviewSession.coaching_feedback.
     Immediately pushed to the frontend via WebSocket.
     """
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
     answer_index: int
     """Index of the Answer this feedback responds to."""
 

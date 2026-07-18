@@ -125,7 +125,7 @@ def evaluatorAgent(state: dict) -> dict:
         }
 
     # ── Step 3: Persist report JSON to disk ────────────────────────────────────
-    reportDict = report.model_dump()
+    reportDict = report.model_dump(by_alias=True)
     _persistReportJson(sessionId, reportDict, stepLog)
 
     stepLog.append(

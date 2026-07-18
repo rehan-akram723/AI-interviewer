@@ -90,6 +90,7 @@ class SessionManager:
         """
         self._activeSessions: dict[str, dict] = {}
         self._prefetch_cache: dict[str, dict] = {}
+        self._report_generating: set[str] = set()  # session IDs with in-flight report generation
 
         self._candidateDir = Path(
             candidateStoragePath or settings.candidate_storage_path
@@ -303,6 +304,22 @@ class SessionManager:
         if q:
             logger.debug("Popped prefetched question for session %s", session_id)
         return q
+
+    # ── Report Generation Idempotency Lock ────────────────────────────────────
+
+    def is_report_generating(self, session_id: str) -> bool:
+        """Return True if a report generation task is already in-flight."""
+        return session_id in self._report_generating
+
+    def mark_report_generating(self, session_id: str) -> None:
+        """Mark that report generation has started for this session."""
+        self._report_generating.add(session_id)
+        logger.debug("Report generation lock acquired for session %s", session_id)
+
+    def clear_report_generating(self, session_id: str) -> None:
+        """Release the report generation lock for this session."""
+        self._report_generating.discard(session_id)
+        logger.debug("Report generation lock released for session %s", session_id)
 
     def getActiveSessionIds(self) -> list:
         """Return list of all session IDs currently held in memory."""

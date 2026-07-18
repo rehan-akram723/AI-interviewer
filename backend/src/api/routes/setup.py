@@ -199,7 +199,54 @@ async def _runSetupGraph(sessionId: str, initialState: dict) -> None:
 
         # Mark as ready if setup succeeded
         if updatedSession.get("status") != "error":
-            sessionManager.setSessionStatus(sessionId, "ready")
+            #if updatedSession.get("app_mode") == "demo":
+            if False: # updatedSession.get("app_mode") == "demo":
+
+                # Mock a complete interview to skip directly to report generation
+                from datetime import datetime, timezone
+                questionPlan = updatedSession.get("question_plan", [])
+                
+                asked_questions = []
+                answers = []
+                coaching_feedback = []
+                now = datetime.now(timezone.utc).isoformat()
+                
+                for i, qText in enumerate(questionPlan):
+                    asked_questions.append({
+                        "index": i,
+                        "text": qText,
+                        "phase": "cv_deep_dive",
+                        "category": "technical",
+                        "difficulty": 3,
+                        "followup_count": 0,
+                        "asked_at": now
+                    })
+                    answers.append({
+                        "question_index": i,
+                        "text": "This is a hardcoded mock answer for demo purposes. I used the STAR method successfully and achieved a 50% performance improvement.",
+                        "answered_at": now,
+                        "duration_seconds": 30.0
+                    })
+                    coaching_feedback.append({
+                        "answer_index": i,
+                        "feedback_text": "Good structure using the STAR method. Consider adding more metrics.",
+                        "score_preview": 8,
+                        "strengths": ["Clear structure"],
+                        "improvements": ["Needs more data"],
+                        "dimension_scores": {"relevance": 8, "clarity": 9, "depth": 7, "confidence": 8, "structure": 9}
+                    })
+                
+                sessionManager.updateSession(sessionId, {
+                    "asked_questions": asked_questions,
+                    "answers": answers,
+                    "coaching_feedback": coaching_feedback,
+                    "current_question_index": len(questionPlan),
+                    "status": "completed"
+                })
+                updatedSession = sessionManager.getSession(sessionId)
+                logger.info("Demo mode: Auto-completed interview with %d questions", len(questionPlan))
+            else:
+                sessionManager.setSessionStatus(sessionId, "ready")
 
         # Persist candidate profile with parsed data
         candidateData = updatedSession.get("candidate", {})

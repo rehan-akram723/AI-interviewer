@@ -4,7 +4,8 @@
 # Pydantic models for the final Interview Report and cross-session Progress Comparisons.
 # ─────────────────────────────────────────────────────────────────────────────
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
+from pydantic.alias_generators import to_camel
 from typing import Dict, List, Optional
 
 
@@ -12,6 +13,8 @@ class DimensionScore(BaseModel):
     """
     A calculated score and narrative for a single evaluation dimension.
     """
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
     score: float = Field(ge=1.0, le=10.0)
     """Numeric score from 1.0 to 10.0."""
 
@@ -26,6 +29,8 @@ class InterviewReport(BaseModel):
     """
     The final finalized structured output for a completed interview session.
     """
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
     session_id: str
     candidate_id: str
     interview_mode: str
@@ -58,6 +63,8 @@ class ProgressComparison(BaseModel):
     """
     Delta analysis between two InterviewReport instances.
     """
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
     overall_score_delta: float
     """Difference in overall score (current - previous). Positive means improvement."""
 
