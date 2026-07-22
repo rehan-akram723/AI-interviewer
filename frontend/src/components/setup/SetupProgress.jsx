@@ -19,10 +19,16 @@ const SetupProgress = () => {
     useEffect(() => {
         if (!sessionId) return;
 
+        let consecutiveErrors = 0;
+        const MAX_ERRORS = 5;
+
         const interval = setInterval(async () => {
             try {
                 const res = await axios.get(`http://localhost:8000/api/sessions/${sessionId}/status`);
                 const data = res.data;
+
+                // Reset error counter on success
+                consecutiveErrors = 0;
 
                 setStatus(data.status);
 
@@ -51,8 +57,15 @@ const SetupProgress = () => {
                     setError(data.error || 'An unexpected error occurred during setup.');
                 }
             } catch (err) {
-                setError('Failed to connect to backend.');
-                clearInterval(interval);
+                consecutiveErrors += 1;
+                const detail = err.response?.data?.message || err.response?.data?.detail || err.message;
+                console.warn(`[SetupProgress] Poll error #${consecutiveErrors}:`, detail);
+
+                // Only give up after several consecutive failures
+                if (consecutiveErrors >= MAX_ERRORS) {
+                    setError(`Connection lost after ${MAX_ERRORS} attempts. ${detail || 'Is the backend running?'}`);
+                    clearInterval(interval);
+                }
             }
         }, 1200);
 

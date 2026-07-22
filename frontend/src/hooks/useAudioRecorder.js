@@ -36,7 +36,15 @@ const useAudioRecorder = (isDemo = true) => {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             streamRef.current = stream;
 
-            const mediaRecorder = new MediaRecorder(stream);
+            // Pick the best supported MIME type for maximum Whisper compatibility
+            const mimeType = [
+                'audio/webm;codecs=opus',
+                'audio/webm',
+                'audio/ogg;codecs=opus',
+                'audio/mp4',
+            ].find(t => MediaRecorder.isTypeSupported(t)) || '';
+
+            const mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
             mediaRecorderRef.current = mediaRecorder;
 
             mediaRecorder.ondataavailable = (event) => {
@@ -46,7 +54,8 @@ const useAudioRecorder = (isDemo = true) => {
             };
 
             mediaRecorder.onstop = () => {
-                const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                const finalMime = mimeType || 'audio/webm';
+                const blob = new Blob(audioChunksRef.current, { type: finalMime });
                 setAudioBlob(blob);
                 audioChunksRef.current = [];
 
@@ -67,6 +76,7 @@ const useAudioRecorder = (isDemo = true) => {
             );
         }
     }, [isDemo]); // stable — no longer depends on isRecording state
+
 
     // ── Stop recording ────────────────────────────────────────────────────────
     const stopRecording = useCallback(() => {

@@ -3,39 +3,46 @@
    Global design system — dark mode, Inter font, custom properties
    ───────────────────────────────────────────────────────────────────────────── */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;0,14..32,900&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --bg-primary: #020617; /* slate-950 */
-  --bg-surface: #0f172a; /* slate-900 */
-  --bg-elevated: #151e2e; /* slate-850 */
-  --bg-border: rgba(255, 255, 255, 0.08);
-  --bg-muted: #1e293b; /* slate-800 */
+  /* ── Base palette ── */
+  --bg-base:     #04060f;   /* near-black with blue tint */
+  --bg-primary:  #060a14;
+  --bg-surface:  #0c1220;
+  --bg-elevated: #111827;
+  --bg-muted:    #1a2236;
+  --bg-border:   rgba(255, 255, 255, 0.07);
 
-  --text-primary: #f8fafc; /* slate-50 */
-  --text-secondary: #94a3b8; /* slate-400 */
-  --text-muted: #64748b; /* slate-500 */
+  /* ── Text ── */
+  --text-primary:   #f0f4ff;
+  --text-secondary: #8b9bbf;
+  --text-muted:     #4b5a7a;
 
-  --accent-blue: #3b82f6;
-  --accent-blue-hover: #2563eb;
-  --accent-emerald: #10b981;
-  --accent-amber: #f59e0b;
-  --accent-red: #ef4444;
-  --accent-purple: #8b5cf6;
+  /* ── Accents ── */
+  --accent-blue:    #4f8ef7;
+  --accent-blue-glow: rgba(79, 142, 247, 0.35);
+  --accent-violet:  #7c63f5;
+  --accent-violet-glow: rgba(124, 99, 245, 0.3);
+  --accent-emerald: #34d399;
+  --accent-amber:   #fbbf24;
+  --accent-red:     #f87171;
+  --accent-red-glow: rgba(248, 113, 113, 0.35);
 
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
+  /* ── Radii ── */
+  --r-sm:  6px;
+  --r-md:  10px;
+  --r-lg:  16px;
+  --r-xl:  20px;
+  --r-2xl: 28px;
+  --r-pill: 9999px;
 }
 
-*, *::before, *::after {
-  box-sizing: border-box;
-}
+*, *::before, *::after { box-sizing: border-box; }
 
 html {
   font-size: 16px;
@@ -45,247 +52,186 @@ html {
 
 body {
   margin: 0;
-  background-color: var(--bg-primary);
+  background-color: var(--bg-base);
   color: var(--text-primary);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 /* ── Scrollbar ───────────────────────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--bg-surface); }
-::-webkit-scrollbar-thumb { background: var(--bg-muted); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #52525b; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.14); }
 
-/* ── Selection ───────────────────────────────────────────────────────────────── */
-::selection {
-  background: rgba(59, 130, 246, 0.3);
-  color: var(--text-primary);
-}
+/* ── Selection ── */
+::selection { background: rgba(79, 142, 247, 0.28); color: var(--text-primary); }
 
-/* ── Focus Ring ──────────────────────────────────────────────────────────────── */
+/* ── Focus ── */
 *:focus-visible {
   outline: 2px solid var(--accent-blue);
   outline-offset: 2px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-sm);
 }
 
-/* ── Utility classes ─────────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   GLASS UTILITIES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Standard glass — for cards and panels */
 .glass {
-  background: rgba(2, 6, 23, 0.4); /* slate-950/40 */
+  background: rgba(8, 12, 24, 0.55);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+/* Heavier glass — for overlay panels on the interview room */
+.glass-heavy {
+  background: rgba(4, 6, 15, 0.72);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.07);
+}
+
+/* Lighter glass — for subtle backgrounds */
+.glass-light {
+  background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 0 50px -12px rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.glass-panel {
-  background: rgba(15, 23, 42, 0.6); /* slate-900/60 */
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-}
+/* Legacy aliases */
+.glass-panel { @apply glass; }
+.glass-card  { @apply glass; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GRADIENT UTILITIES
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 .gradient-text {
-  background: linear-gradient(to right, #ffffff, #e2e8f0, #94a3b8);
+  background: linear-gradient(135deg, #c8d8ff 0%, #7c9fff 50%, #a78bfa 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-.glow-accent {
-  box-shadow: 0 0 30px rgba(59, 130, 246, 0.2), 0 0 60px rgba(139, 92, 246, 0.1);
+.gradient-text-blue {
+  background: linear-gradient(135deg, #93c5fd 0%, #4f8ef7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-/* ── Input base ──────────────────────────────────────────────────────────────── */
-.input-base {
-  width: 100%;
-  background: var(--bg-elevated);
-  border: 1px solid var(--bg-border);
-  border-radius: var(--radius-md);
-  color: var(--text-primary);
-  font-family: inherit;
-  font-size: 0.9375rem;
-  padding: 0.75rem 1rem;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  resize: none;
-}
+/* ═══════════════════════════════════════════════════════════════════════════
+   GLOW EFFECTS
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-.input-base::placeholder {
-  color: var(--text-muted);
-}
+.glow-blue   { box-shadow: 0 0 24px var(--accent-blue-glow); }
+.glow-violet { box-shadow: 0 0 24px var(--accent-violet-glow); }
+.glow-red    { box-shadow: 0 0 24px var(--accent-red-glow); }
+.glow-text   { text-shadow: 0 0 20px rgba(79, 142, 247, 0.5); }
 
-.input-base:focus {
-  outline: none;
-  border-color: var(--accent-blue);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
-}
+/* ═══════════════════════════════════════════════════════════════════════════
+   MESH BACKGROUND
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-/* ── Button base ─────────────────────────────────────────────────────────────── */
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.75rem;
-  background: var(--accent-blue);
-  color: #fff;
-  font-family: inherit;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  border: none;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
-}
-
-.btn-primary:hover {
-  background: var(--accent-blue-hover);
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
-}
-
-.btn-primary:active {
-  transform: translateY(1px);
-}
-
-.btn-primary:disabled {
-  background: var(--bg-muted);
-  color: var(--text-muted);
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-/* ── Card ───────────────────────────────────────────────────────────────────── */
-.card {
-  background: var(--bg-elevated);
-  border: 1px solid var(--bg-border);
-  border-radius: var(--radius-xl);
-  padding: 1.5rem;
-}
-
-/* ── Animations ─────────────────────────────────────────────────────────────── */
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes shimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position:  200% 0; }
-}
-
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.3; }
-}
-
-.fade-in-up {
-  animation: fadeInUp 0.35s ease both;
-}
-
-.skeleton {
-  background: linear-gradient(
-    90deg,
-    var(--bg-elevated) 25%,
-    var(--bg-muted)    50%,
-    var(--bg-elevated) 75%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  border-radius: var(--radius-sm);
-}
-
-/* ── New: Interview Room visual design ──────────────────────────────────────── */
-
-/* Mesh gradient background for the interview room */
-.interview-bg {
-  background-color: var(--bg-primary);
+.bg-mesh {
+  background-color: var(--bg-base);
   background-image:
-    radial-gradient(ellipse 80% 50% at 20% 40%, rgba(59, 130, 246, 0.07) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 60% at 80% 60%, rgba(139, 92, 246, 0.06) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 30% at 50% 90%, rgba(16, 185, 129, 0.04) 0%, transparent 60%);
+    radial-gradient(ellipse 70% 50% at 15% 30%, rgba(79, 142, 247, 0.08) 0%, transparent 65%),
+    radial-gradient(ellipse 55% 55% at 85% 70%, rgba(124, 99, 245, 0.07) 0%, transparent 65%),
+    radial-gradient(ellipse 35% 30% at 50% 95%, rgba(52, 211, 153, 0.04) 0%, transparent 60%);
 }
 
-/* Glassmorphism card */
-.glass-card {
-  background: rgba(24, 24, 27, 0.6);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.05);
-}
+/* ═══════════════════════════════════════════════════════════════════════════
+   LAYOUT HELPERS
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Glowing border on focus/active elements */
-.glow-border-blue {
-  border: 1px solid rgba(59, 130, 246, 0.4);
-  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.15), 0 0 20px rgba(59, 130, 246, 0.08);
-}
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Question text reveal animation */
-@keyframes questionReveal {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-    filter: blur(4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-    filter: blur(0);
-  }
-}
+/* ═══════════════════════════════════════════════════════════════════════════
+   ANIMATIONS
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-.question-reveal {
-  animation: questionReveal 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(14px); filter: blur(4px); }
+  to   { opacity: 1; transform: translateY(0);    filter: blur(0);   }
 }
+.fade-in-up { animation: fadeInUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
-/* Coaching card slide-in */
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.slide-in-left { animation: slideInLeft 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
 @keyframes slideInRight {
   from { opacity: 0; transform: translateX(20px); }
   to   { opacity: 1; transform: translateX(0); }
 }
+.slide-in-right { animation: slideInRight 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
-.slide-in-right {
-  animation: slideInRight 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+@keyframes slideInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.slide-in-up { animation: slideInUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+@keyframes questionReveal {
+  from { opacity: 0; transform: translateY(16px); filter: blur(6px); }
+  to   { opacity: 1; transform: translateY(0);    filter: blur(0);   }
+}
+.question-reveal { animation: questionReveal 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+@keyframes shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
-/* Waveform bar animation */
+@keyframes blob {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%       { transform: translate(24px, -18px) scale(1.08); }
+  66%       { transform: translate(-18px, 12px) scale(0.95); }
+}
+.animate-blob { animation: blob 10s ease-in-out infinite; }
+
+@keyframes recordPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.55); }
+  70%  { box-shadow: 0 0 0 16px rgba(248, 113, 113, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0); }
+}
+.record-pulse { animation: recordPulse 1.6s ease-out infinite; }
+
 @keyframes wavebar {
-  0%, 100% { transform: scaleY(0.3); }
-  50%       { transform: scaleY(1); }
+  0%, 100% { transform: scaleY(0.25); }
+  50%       { transform: scaleY(1);    }
 }
-
 .wavebar {
   width: 3px;
   border-radius: 2px;
   transform-origin: bottom;
-  animation: wavebar 0.9s ease-in-out infinite;
+  animation: wavebar 0.85s ease-in-out infinite;
 }
 
-/* Recording pulse ring */
-@keyframes recordPulse {
-  0%   { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
-  70%  { box-shadow: 0 0 0 14px rgba(239, 68, 68, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-8px); }
 }
+.animate-float { animation: float 5s ease-in-out infinite; }
 
-.record-pulse {
-  animation: recordPulse 1.5s ease-out infinite;
+@keyframes scoreFill { from { stroke-dashoffset: 314; } }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SKELETON
+   ═══════════════════════════════════════════════════════════════════════════ */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-elevated) 25%, var(--bg-muted) 50%, var(--bg-elevated) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+  border-radius: var(--r-sm);
 }
-
-/* Score ring fill animation */
-@keyframes scoreFill {
-  from { stroke-dashoffset: 314; }
-}
-
-/* Typing indicator dots */
-@keyframes typingBounce {
-  0%, 60%, 100% { transform: translateY(0); }
-  30%            { transform: translateY(-6px); }
-}
-
-.typing-dot {
-  animation: typingBounce 1.2s ease-in-out infinite;
-}
-

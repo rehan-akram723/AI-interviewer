@@ -66,47 +66,57 @@ const App = () => {
         }
     };
 
+    // In interview phase the room is fullscreen — hide nav bar
+    const isInterviewPhase = currentPhase === 'interview';
+
     return (
-        <div className="min-h-screen bg-slate-950 text-slate-50 relative overflow-hidden font-sans selection:bg-accent-blue/30">
-            {/* Global background glow */}
-            <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-glow-radial from-accent-blue/10 via-transparent to-transparent opacity-50 blur-[120px] pointer-events-none" />
-            <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-glow-radial from-accent-purple/10 via-transparent to-transparent opacity-50 blur-[150px] pointer-events-none" />
+        <div className={`min-h-screen text-slate-50 font-sans selection:bg-accent-blue/30 relative overflow-hidden ${isInterviewPhase ? 'bg-black' : 'bg-slate-950'}`}>
 
-            {/* ── Global Nav Bar ─────────────────────────────────────────────── */}
-            <header className="relative flex items-center justify-between px-8 h-16 border-b border-white/5 bg-slate-900/50 backdrop-blur-md z-50">
-                <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-[10px] bg-gradient-to-br from-accent-blue to-accent-purple flex items-center justify-center shrink-0 shadow-lg shadow-accent-blue/20">
-                        <svg width="18" height="18" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                        </svg>
+            {/* Global background glow — not shown during fullscreen interview */}
+            {!isInterviewPhase && (
+                <>
+                    <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-glow-radial from-accent-blue/10 via-transparent to-transparent opacity-50 blur-[120px] pointer-events-none" />
+                    <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-glow-radial from-accent-purple/10 via-transparent to-transparent opacity-50 blur-[150px] pointer-events-none" />
+                </>
+            )}
+
+            {/* ── Global Nav Bar — hidden during fullscreen interview ─────────── */}
+            {!isInterviewPhase && (
+                <header className="relative flex items-center justify-between px-8 h-16 border-b border-white/5 bg-slate-900/50 backdrop-blur-md z-50">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-[10px] bg-gradient-to-br from-accent-blue to-accent-purple flex items-center justify-center shrink-0 shadow-lg shadow-accent-blue/20">
+                            <svg width="18" height="18" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                            </svg>
+                        </div>
+                        <span className="font-extrabold text-[15px] tracking-[-0.03em] gradient-text drop-shadow-sm">
+                            AI Interviewer
+                        </span>
                     </div>
-                    <span className="font-extrabold text-[15px] tracking-[-0.03em] gradient-text drop-shadow-sm">
-                        AI Interviewer
-                    </span>
-                </div>
 
-                {/* Phase breadcrumb */}
-                <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.15em] font-bold">
-                    {['Setup', 'Processing', 'Interview', 'Report'].map((label, i) => {
-                        const phases = ['setup', 'waiting', 'interview', 'report'];
-                        const currentIdx = phases.indexOf(currentPhase);
-                        const isActive = phases[i] === currentPhase;
-                        const isDone = i < currentIdx;
-                        return (
-                            <React.Fragment key={label}>
-                                <span className={`transition-colors duration-500 ${
-                                    isActive ? 'text-accent-blue glow-text' : 
-                                    isDone ? 'text-slate-400' : 
-                                    'text-slate-600'
-                                }`}>
-                                    {isDone ? '✓ ' : ''}{label}
-                                </span>
-                                {i < 3 && <span className="text-slate-700/50">/</span>}
-                            </React.Fragment>
-                        );
-                    })}
-                </div>
-            </header>
+                    {/* Phase breadcrumb */}
+                    <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.15em] font-bold">
+                        {['Setup', 'Processing', 'Interview', 'Report'].map((label, i) => {
+                            const phases = ['setup', 'waiting', 'interview', 'report'];
+                            const currentIdx = phases.indexOf(currentPhase);
+                            const isActive = phases[i] === currentPhase;
+                            const isDone = i < currentIdx;
+                            return (
+                                <React.Fragment key={label}>
+                                    <span className={`transition-colors duration-500 ${
+                                        isActive ? 'text-accent-blue' : 
+                                        isDone ? 'text-slate-400' : 
+                                        'text-slate-600'
+                                    }`}>
+                                        {isDone ? '✓ ' : ''}{label}
+                                    </span>
+                                    {i < 3 && <span className="text-slate-700/50">/</span>}
+                                </React.Fragment>
+                            );
+                        })}
+                    </div>
+                </header>
+            )}
 
             {/* ── State Machine Router ───────────────────────────────────────── */}
             <main className="flex-1 relative z-10">
@@ -126,9 +136,8 @@ const App = () => {
                         </motion.div>
                     )}
                     {currentPhase === 'interview' && (
-                        <motion.div key="interview" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full">
-                            <InterviewRoom sessionId={sessionId} isDemo={appMode !== 'production'} />
-                        </motion.div>
+                        /* No motion wrapper — InterviewRoom manages its own fixed positioning */
+                        <InterviewRoom key="interview" sessionId={sessionId} isDemo={appMode !== 'production'} />
                     )}
                     {currentPhase === 'report' && (
                         <motion.div key="report" variants={pageVariants} initial="initial" animate="animate" exit="exit" className="h-full">

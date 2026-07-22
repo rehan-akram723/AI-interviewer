@@ -12,12 +12,19 @@ export default {
           950: '#020617',
         },
         accent: {
-          blue: '#3b82f6',
-          purple: '#8b5cf6',
-          cyan: '#06b6d4',
-          emerald: '#10b981',
-          rose: '#f43f5e'
-        }
+          blue:    '#4f8ef7',
+          violet:  '#7c63f5',
+          purple:  '#8b5cf6',
+          cyan:    '#06b6d4',
+          emerald: '#34d399',
+          amber:   '#fbbf24',
+          red:     '#f87171',
+          rose:    '#f43f5e',
+        },
+        bg: {
+          base:    '#04060f',
+          surface: '#0c1220',
+        },
       },
       backgroundImage: {
         'glow-radial': 'radial-gradient(circle at center, var(--tw-gradient-stops))',
