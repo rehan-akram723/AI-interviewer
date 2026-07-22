@@ -306,37 +306,75 @@ async def run_full_pipeline(state: dict, session_id: str):
             loop.run_in_executor(None, liveCoachAgent, state),
             loop.run_in_executor(None, difficultyCalibratorAgent, state)
         )
-        
+
         updates = {}
+        # Append new coaching feedback — do NOT overwrite the full list
         if "coaching_feedback" in coach_res:
-            updates["coaching_feedback"] = coach_res["coaching_feedback"]
+            existing_feedback = list(state.get("coaching_feedback", []))
+            new_items = coach_res["coaching_feedback"]
+            if isinstance(new_items, list):
+                existing_feedback.extend(new_items)
+            elif new_items:
+                existing_feedback.append(new_items)
+            updates["coaching_feedback"] = existing_feedback
+
         if "difficulty_level" in calib_res:
             updates["difficulty_level"] = calib_res["difficulty_level"]
         if "difficulty_dimensions" in calib_res:
             updates["difficulty_dimensions"] = calib_res["difficulty_dimensions"]
-            
+        if "suggest_followup" in calib_res:
+            updates["suggest_followup"] = calib_res["suggest_followup"]
+
         updated_session = sessionManager.updateSession(session_id, updates)
-        
+
+        # Push coaching feedback immediately so UI doesn't wait for conductor
+        new_feedback = coach_res.get("coaching_feedback")
+        last_feedback = (new_feedback[-1] if isinstance(new_feedback, list) and new_feedback
+                         else new_feedback if new_feedback else None)
+        if last_feedback:
+            pushToClientSync(session_id, {"type": "coaching_feedback", "payload": last_feedback})
+        if "difficulty_level" in calib_res:
+            pushToClientSync(session_id, {
+                "type": "difficulty_update",
+                "payload": {
+                    "difficultyLevel": calib_res["difficulty_level"],
+                    "difficultyDimensions": calib_res.get("difficulty_dimensions", {}),
+                }
+            })
+
         # 2. Follow-Up Agent
         followup_res = await loop.run_in_executor(None, lambda: followUpAgent(updated_session))
         updated_session = sessionManager.updateSession(session_id, followup_res)
         next_question = followup_res.get("next_question")
-        
+
         # 3. Conductor Agent (if no follow-up was generated)
         if not next_question:
             conductor_res = await loop.run_in_executor(None, lambda: conductorAgent(updated_session))
             updated_session = sessionManager.updateSession(session_id, conductor_res)
             next_question = conductor_res.get("next_question")
+            conductor_status = conductor_res.get("status", "")
+            if conductor_status == "completed":
+                sessionManager.setSessionStatus(session_id, "completed")
+                updated_session = sessionManager.getSession(session_id)
 
         await sessionManager.saveSessionAsync(updated_session)
 
         # 4. Push Results via WebSocket
+        # ONLY send interview_complete when the session is genuinely marked completed.
+        # Never fire it just because next_question is None — that could be a transient error.
         is_complete = updated_session.get("status") == "completed"
-        if is_complete or not next_question:
+        if is_complete:
             pushToClientSync(session_id, {"type": "interview_complete", "payload": {}})
-        else:
+        elif next_question:
             pushToClientSync(session_id, {"type": "next_question", "payload": next_question})
-            
+        else:
+            # next_question is None but interview is not complete — log and do nothing.
+            # The frontend will stay on the current question until manually progressed.
+            logger.warning(
+                "run_full_pipeline: conductor returned no next_question but interview is not "
+                "complete for session %s. State may be inconsistent.", session_id
+            )
+
     except Exception as exc:
         logger.error("Background pipeline failed: %s", exc, exc_info=True)
         try:
