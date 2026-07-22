@@ -85,12 +85,20 @@ def callLlm(
 
     lastError = None
     for attempt in range(1, maxRetries + 1):
-        response = _client.chat.completions.create(
-            model=selectedModel,
-            messages=messages,
-            temperature=temperature,
-            max_tokens=maxTokens,
-        )
+        try:
+            response = _client.chat.completions.create(
+                model=selectedModel,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=maxTokens,
+            )
+        except Exception as connErr:
+            # Retry on transient network errors (DNS blips, timeouts, etc.)
+            lastError = connErr
+            if attempt < maxRetries:
+                time.sleep(attempt * 2.0)
+                continue
+            raise
 
         rawText = response.choices[0].message.content or ""
 
