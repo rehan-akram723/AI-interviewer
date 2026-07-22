@@ -162,6 +162,7 @@ async def getSessionStatus(sessionId: str) -> JSONResponse:
 
     stepLog = session.get("step_log", [])
     lastStep = stepLog[-1] if stepLog else "Initialising…"
+    questionPlan = session.get("question_plan", [])
 
     return JSONResponse(content={
         "session_id": sessionId,
@@ -169,7 +170,9 @@ async def getSessionStatus(sessionId: str) -> JSONResponse:
         "status": session.get("status", "setting_up"),
         "last_step": lastStep,
         "error": session.get("error"),
+        "question_plan_length": len(questionPlan),
     })
+
 
 
 # ── Background worker ──────────────────────────────────────────────────────────

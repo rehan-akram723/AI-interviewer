@@ -196,24 +196,41 @@ const InterviewRoom = ({ sessionId, isDemo = true }) => {
     useEffect(() => {
         if (isInterviewComplete) {
             setCurrentPhase("report");
-        } else if (nextQuestion && nextQuestion.asked_at !== currentQuestion?.asked_at) {
-            setCurrentQuestion(nextQuestion);
-            setIsSubmitting(false);
-            setCoachOpen(false);
+        } else if (nextQuestion) {
+            // Use index as primary key; fall back to asked_at if available
+            const isNew = nextQuestion.index !== currentQuestion?.index ||
+                          nextQuestion.asked_at !== currentQuestion?.asked_at;
+            if (isNew) {
+                setCurrentQuestion(nextQuestion);
+                setIsSubmitting(false);
+                setCoachOpen(false);
+            }
         }
     }, [nextQuestion, isInterviewComplete, currentQuestion, setCurrentPhase]);
+
 
     // Fetch first question on mount
     useEffect(() => {
         if (!sessionId) return;
         const fetchInitial = async () => {
             try {
-                const res = await axios.get(`http://localhost:8000/api/sessions/${sessionId}/status`);
-                const data = res.data;
-                if (data.next_question) setCurrentQuestion(data.next_question);
-                if (data.question_plan) setQuestionPlanLength(data.question_plan.length);
-                if (data.status === "completed") setCurrentPhase("report");
-            } catch { /* ignore */ }
+                // Fetch question plan length from status
+                const statusRes = await axios.get(`http://localhost:8000/api/sessions/${sessionId}/status`);
+                if (statusRes.data.question_plan_length) {
+                    setQuestionPlanLength(statusRes.data.question_plan_length);
+                }
+
+                // Fetch (or deliver) the first question via the /question endpoint
+                const qRes = await axios.get(`http://localhost:8000/api/sessions/${sessionId}/question`);
+                if (qRes.data.question) {
+                    setCurrentQuestion(qRes.data.question);
+                }
+                if (qRes.data.status === "completed") {
+                    setCurrentPhase("report");
+                }
+            } catch (err) {
+                console.error("[InterviewRoom] Failed to fetch initial question:", err.response?.data || err.message);
+            }
         };
         fetchInitial();
     }, [sessionId, setCurrentPhase]);
