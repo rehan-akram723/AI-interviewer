@@ -39,6 +39,7 @@ from typing import Optional
 from src.modules.interviewEngine.flowController import (
     getCurrentPhase,
     isInterviewComplete,
+    MAX_QUESTIONS_PER_LENGTH,
 )
 from src.schemas.interviewSchema import Question
 
@@ -103,6 +104,19 @@ def conductorAgent(state: dict) -> dict:
     if currentIndex >= len(questionPlan):
         # Redundant safety net — isInterviewComplete() should catch this
         stepLog.append("[conductorAgent] Index out of bounds. Interview complete.")
+        return {
+            "next_question": None,
+            "status": "completed",
+            "step_log": stepLog,
+        }
+
+    # ── 2b. ABSOLUTE HARD CAP — never exceed length ceiling ───────────────────
+    hardMax = MAX_QUESTIONS_PER_LENGTH.get(interviewLength, 25)
+    if currentIndex >= hardMax:
+        stepLog.append(
+            f"[conductorAgent] Hard cap reached: {currentIndex}/{hardMax} questions "
+            f"for '{interviewLength}' interview. Forcing completion."
+        )
         return {
             "next_question": None,
             "status": "completed",

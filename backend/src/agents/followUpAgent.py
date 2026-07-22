@@ -55,6 +55,7 @@ from src.core.llmClient import callLlm
 from src.modules.interviewEngine.flowController import (
     getFollowupCount,
     MAX_FOLLOWUPS_PER_QUESTION,
+    MAX_FOLLOWUPS_BY_LENGTH,
 )
 from src.schemas.interviewSchema import Question
 
@@ -84,6 +85,9 @@ Role: {roleCategory}
 Phase: {phase}
 Difficulty: {difficultyLevel}/5
 
+TOPICS ALREADY COVERED IN THIS SESSION (do NOT ask about any of these again):
+{coveredTopics}
+
 Decide whether to generate a follow-up question or advance to the next planned question.
 
 Generate a follow-up question ONLY IF the candidate:
@@ -95,6 +99,7 @@ Do NOT generate a follow-up if:
 - The answer was comprehensive and self-contained.
 - The candidate already gave concrete examples with results.
 - A follow-up would feel repetitive given the interview context.
+- The topic overlaps with any question in the TOPICS ALREADY COVERED list above.
 
 If generating a follow-up: the question MUST directly reference something they said.
 Bad: "Tell me more about your experience."
@@ -160,12 +165,14 @@ def followUpAgent(state: dict) -> dict:
     if parentIdx is None:
         parentIdx = lastQuestion.get("index", 0)
 
-    # ── STEP 1: HARD CEILING CHECK ─────────────────────────────────────────────
+    # ── STEP 1: HARD CEILING CHECK (length-aware) ─────────────────────────────
+    interviewLength: str = state.get("interview_length", "medium")
+    lengthCeiling = MAX_FOLLOWUPS_BY_LENGTH.get(interviewLength, MAX_FOLLOWUPS_PER_QUESTION)
     followupsUsed = getFollowupCount(state, parentIdx)
-    if followupsUsed >= MAX_FOLLOWUPS_PER_QUESTION:
+    if followupsUsed >= lengthCeiling:
         stepLog.append(
-            f"[followUpAgent] Hard ceiling reached: {followupsUsed}/{MAX_FOLLOWUPS_PER_QUESTION} "
-            f"follow-ups for question {parentIdx}. Advancing plan. No LLM call."
+            f"[followUpAgent] Hard ceiling reached: {followupsUsed}/{lengthCeiling} "
+            f"follow-ups for question {parentIdx} (length={interviewLength}). Advancing plan."
         )
         return {
             "next_question": None,
@@ -200,6 +207,12 @@ def followUpAgent(state: dict) -> dict:
     questionText: str = lastQuestion.get("text", "")
     questionPhase: str = lastQuestion.get("phase", "cv_deep_dive")
 
+    # Build a compact history of all questions already asked to inject into prompt
+    coveredTopics = "\n".join(
+        f"  - Q{i+1}: {q.get('text', '')[:100]}"
+        for i, q in enumerate(askedQuestions[:-1])  # exclude the current question
+    ) or "  (None yet — this is the first question)"
+
     if suggestFollowup:
         stepLog.append(
             "[followUpAgent] DifficultyCalibrator flagged strong structure — "
@@ -217,6 +230,7 @@ def followUpAgent(state: dict) -> dict:
         roleCategory=roleCategory,
         phase=questionPhase,
         difficultyLevel=difficultyLevel,
+        coveredTopics=coveredTopics,
     )
 
     try:

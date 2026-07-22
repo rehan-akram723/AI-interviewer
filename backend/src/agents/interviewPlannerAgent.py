@@ -30,7 +30,7 @@ from src.modules.interviewEngine.questionBank import (
     getBaseQuestions,
     MODE_DISTRIBUTIONS,
 )
-from src.modules.interviewEngine.flowController import LENGTH_TARGETS
+from src.modules.interviewEngine.flowController import LENGTH_TARGETS, MAX_QUESTIONS_PER_LENGTH
 
 
 # ── Length validity ranges (from manifest §5.7) ────────────────────────────────
@@ -76,15 +76,23 @@ PHASE STRUCTURE (must follow this order):
 REFERENCE QUESTION BANK (use as inspiration, rephrase and personalise for this candidate):
 {questionBankSample}
 
-RULES:
-1. Generate EXACTLY {targetTotal} questions total.
-2. Personalise each question using the candidate's CV details — mention specific skills,
-   companies, or projects where relevant (e.g., "In your role at Acme Corp, you mentioned
-   Python APIs — walk me through...").
-3. Follow the phase order strictly: all icebreakers first, then cv_deep_dive, etc.
-4. For CV Deep Dive and Dynamic Follow-up phases, focus on confirmed_skills and skills_gap.
-5. Do NOT repeat the exact wording of any question from the reference bank.
-6. Return ONLY a valid JSON array of {targetTotal} question strings. No labels, no markdown.
+RULES (STRICT — follow every one):
+1. Generate EXACTLY {targetTotal} questions total, no more, no less.
+2. Follow the phase order strictly:
+   - Questions 1–{icebreakerCount}: icebreaker
+   - Questions {icebreakerStart}–{cvDeepDiveEnd}: cv_deep_dive
+   - Questions {dynamicStart}–{dynamicEnd}: dynamic_followup
+   - Final {closingCount}: closing
+3. PERSONALISE every question: reference specific skills, companies, or projects
+   from the CANDIDATE PROFILE above. Never invent technologies or experiences
+   that are not in the profile.
+4. No two questions may cover the same topic or skill. Each question must
+   probe a distinct area.
+5. Do NOT copy or slightly rephrase any question from the REFERENCE QUESTION BANK.
+6. For CV Deep Dive and Dynamic Follow-up: focus exclusively on
+   confirmed_skills and skills_gap listed in the profile.
+7. Return ONLY a valid JSON array of exactly {targetTotal} question strings.
+   No labels, no numbering, no markdown, no explanation.
 
 Example output format:
 ["Question 1 text here", "Question 2 text here", ...]
@@ -124,18 +132,23 @@ def _buildQuestionBankSample(roleCategory: str) -> str:
 def _validatePlanLength(plan: list, interviewLength: str) -> list:
     """
     Validate the LLM-generated plan falls within the manifest range.
-    If the LLM over-generates: truncate to the top of the range.
+    If the LLM over-generates: truncate to the hard max for this length.
     If the LLM under-generates: fill remaining slots with generic closing questions.
 
     Returns the validated (and possibly adjusted) plan.
     """
     minQ, maxQ = _LENGTH_RANGES.get(interviewLength, (5, 25))
+    hardMax = MAX_QUESTIONS_PER_LENGTH.get(interviewLength, maxQ)
     targetQ = LENGTH_TARGETS[interviewLength]["total"]
 
-    if len(plan) > maxQ:
+    # Enforce hard ceiling first
+    if len(plan) > hardMax:
+        plan = plan[:hardMax]
+    elif len(plan) > maxQ:
         plan = plan[:maxQ]
-    elif len(plan) < minQ:
-        # Pad with generic closing questions until we hit minimum
+
+    # Pad if below minimum
+    if len(plan) < minQ:
         while len(plan) < minQ:
             plan.append("What questions do you have for us about the role or the team?")
 
@@ -183,6 +196,13 @@ def interviewPlannerAgent(state: dict) -> dict:
     dynamicFollowupCount = phaseCounts["dynamic_followup"]
     closingCount = phaseCounts["closing"]
 
+    # Compute 1-based question number boundaries for the prompt
+    icebreakerStart = 1
+    icebreakerEndQ = icebreakerCount
+    cvDeepDiveEndQ = icebreakerCount + cvDeepDiveCount
+    dynamicStartQ = cvDeepDiveEndQ + 1
+    dynamicEndQ = dynamicStartQ + dynamicFollowupCount - 1
+
     stepLog.append(
         f"[interviewPlannerAgent] Plan target: {targetTotal} questions | "
         f"length={interviewLength} | mode={interviewMode}"
@@ -206,11 +226,16 @@ def interviewPlannerAgent(state: dict) -> dict:
         roleCategory=roleCategory,
         modeDistribution=_buildModeDistributionText(interviewMode),
         icebreakerCount=icebreakerCount,
+        icebreakerStart=icebreakerStart,
         cvDeepDiveCount=cvDeepDiveCount,
+        cvDeepDiveEnd=cvDeepDiveEndQ,
+        dynamicStart=dynamicStartQ,
+        dynamicEnd=dynamicEndQ,
         dynamicFollowupCount=dynamicFollowupCount,
         closingCount=closingCount,
         questionBankSample=_buildQuestionBankSample(roleCategory),
     )
+
 
     # ── 4. Call LLM ────────────────────────────────────────────────────────────
     stepLog.append("[interviewPlannerAgent] Calling LLM to generate question plan...")

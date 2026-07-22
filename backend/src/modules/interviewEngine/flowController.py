@@ -37,6 +37,23 @@ from typing import Literal, Optional
 MAX_FOLLOWUPS_PER_QUESTION: int = 2
 """Hard ceiling on follow-up chains per original question. Never adjust without manifest update."""
 
+# ── Length-aware follow-up cap ─────────────────────────────────────────────────
+# Short interviews get only 1 follow-up max per question (tight schedule).
+MAX_FOLLOWUPS_BY_LENGTH: dict[str, int] = {
+    "short":  1,
+    "medium": 2,
+    "long":   2,
+}
+
+# ── Absolute hard max questions per length ─────────────────────────────────────
+# These are the HARD CEILINGS — the conductor will never exceed these regardless
+# of what the question plan says. Prevents runaway or hallucinated extra questions.
+MAX_QUESTIONS_PER_LENGTH: dict[str, int] = {
+    "short":  7,
+    "medium": 15,
+    "long":   25,
+}
+
 # ── Phase Boundaries ──────────────────────────────────────────────────────────
 # Each entry: (icebreaker_end_inclusive, cv_deep_dive_end_inclusive, dynamic_followup_end_inclusive)
 # Any index > dynamic_followup_end → closing phase.
@@ -50,30 +67,31 @@ PHASE_BOUNDARIES: dict[str, tuple[int, int, int]] = {
 # Midpoint of each manifest range. Used by InterviewPlannerAgent to size the plan.
 LENGTH_TARGETS: dict[str, dict[str, int]] = {
     "short": {
-        "total": 6,          # range: 5–7
+        "total": 6,          # range: 5–7; hard max 7
         "icebreaker": 1,
         "cv_deep_dive": 2,
         "dynamic_followup": 2,
         "closing": 1,
     },
     "medium": {
-        "total": 13,         # range: 10–15; 3+4+4+2=13
-        "icebreaker": 3,
+        "total": 12,         # range: 10–15; hard max 15
+        "icebreaker": 2,
         "cv_deep_dive": 4,
         "dynamic_followup": 4,
         "closing": 2,
     },
     "long": {
-        "total": 21,         # range: 18–25
-        "icebreaker": 4,
+        "total": 20,         # range: 18–25; hard max 25
+        "icebreaker": 3,
         "cv_deep_dive": 7,
         "dynamic_followup": 7,
-        "closing": 3,        # 4+7+7+3 = 21
+        "closing": 3,        # 3+7+7+3 = 20
     },
 }
 
 # ── Valid length literals ──────────────────────────────────────────────────────
 _VALID_LENGTHS = frozenset(PHASE_BOUNDARIES.keys())
+
 
 
 def getCurrentPhase(
