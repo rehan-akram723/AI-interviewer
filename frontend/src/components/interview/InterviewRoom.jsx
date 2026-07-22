@@ -312,17 +312,25 @@ const InterviewRoom = ({ sessionId, isDemo = true }) => {
                 audioBase64 = btoa(bin);
             }
 
-            const facialData = cameraRef.current?.captureFrame?.() ?? null;
+            // facialData must be null or a mediapipe dict — captureFrame returns
+            // a base64 image string which Pydantic rejects as a dict. Pass null.
             const payload = {
                 questionIndex: currentQuestion.index,
                 text: textAnswer || "",
                 audioBase64,
-                facialData,
+                facialData: null,
                 durationSeconds: 0,
             };
             await axios.post(`http://localhost:8000/api/sessions/${sessionId}/answer`, payload);
         } catch (err) {
-            setSubmitError(err.response?.data?.detail || "Failed to submit answer.");
+            const detail = err.response?.data?.detail;
+            const msg = typeof detail === "string"
+                ? detail
+                : Array.isArray(detail)
+                    ? detail.map(e => `${e.loc?.join(".")}: ${e.msg}`).join("; ")
+                    : "Failed to submit answer. Check console.";
+            console.error("[InterviewRoom] Submit error:", err.response?.data || err.message);
+            setSubmitError(msg);
             setIsSubmitting(false);
         }
     }, [currentQuestion, isSubmitting, sessionId]);
