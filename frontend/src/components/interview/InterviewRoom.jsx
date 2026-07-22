@@ -25,6 +25,41 @@ import axios from "axios";
 import { useSession } from "../../context/SessionContext";
 import { motion, AnimatePresence } from "framer-motion";
 
+// ── Browser TTS hook ───────────────────────────────────────────────────
+const useTTS = () => {
+    const [isMuted, setIsMuted] = useState(false);
+    const utteranceRef = useRef(null);
+
+    const speak = useCallback((text) => {
+        if (!text || isMuted || !window.speechSynthesis) return;
+        // Cancel any ongoing speech
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate  = 0.95;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+        // Prefer a natural-sounding voice if available
+        const voices = window.speechSynthesis.getVoices();
+        const preferred = voices.find(v =>
+            v.lang.startsWith("en") && (v.name.includes("Natural") || v.name.includes("Online") || v.name.includes("Neural"))
+        ) || voices.find(v => v.lang.startsWith("en")) || null;
+        if (preferred) utterance.voice = preferred;
+        utteranceRef.current = utterance;
+        window.speechSynthesis.speak(utterance);
+    }, [isMuted]);
+
+    const cancel = useCallback(() => {
+        window.speechSynthesis?.cancel();
+    }, []);
+
+    const toggleMute = useCallback(() => {
+        window.speechSynthesis?.cancel();
+        setIsMuted(m => !m);
+    }, []);
+
+    return { speak, cancel, toggleMute, isMuted };
+};
+
 // ── Phase config ───────────────────────────────────────────────────────────────
 const PHASE_CONFIG = {
     icebreaker:       { label: "Icebreaker",   color: "#34d399", bg: "rgba(52,211,153,0.15)"  },
@@ -173,7 +208,7 @@ const CoachPanel = ({ feedback, isOpen, onToggle }) => {
     );
 };
 
-// ── Main InterviewRoom ─────────────────────────────────────────────────────────
+// ── Main InterviewRoom ───────────────────────────────────────────────────
 const InterviewRoom = ({ sessionId, isDemo = true }) => {
     const { setCurrentPhase } = useSession();
     const [currentQuestion, setCurrentQuestion] = useState(null);
@@ -182,6 +217,8 @@ const InterviewRoom = ({ sessionId, isDemo = true }) => {
     const [coachOpen, setCoachOpen] = useState(false);
     const [questionPlanLength, setQuestionPlanLength] = useState(null);
     const cameraRef = useRef(null);
+
+    const { speak, cancel, toggleMute, isMuted } = useTTS();
 
     const {
         isConnected, coachingFeedback, difficultyMetrics,
@@ -234,6 +271,15 @@ const InterviewRoom = ({ sessionId, isDemo = true }) => {
         };
         fetchInitial();
     }, [sessionId, setCurrentPhase]);
+
+    // Speak the question aloud whenever it changes
+    useEffect(() => {
+        if (currentQuestion?.text) {
+            speak(currentQuestion.text);
+        }
+        return () => cancel();  // cancel on unmount or question change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentQuestion?.text]);
 
     // Auto-submit when audio recording stops
     useEffect(() => {
@@ -381,8 +427,29 @@ const InterviewRoom = ({ sessionId, isDemo = true }) => {
 
                     {/* Controls row */}
                     <div className="flex items-center justify-between gap-4">
-                        {/* Left: errors / waveform */}
+                        {/* Left: mute + errors / waveform */}
                         <div className="flex items-center gap-3">
+                            {/* TTS mute toggle */}
+                            <button
+                                onClick={toggleMute}
+                                title={isMuted ? "Unmute voice" : "Mute voice"}
+                                className={`flex items-center justify-center w-8 h-8 rounded-full border transition-all duration-200 ${
+                                    isMuted
+                                        ? "border-white/10 bg-white/5 text-slate-500"
+                                        : "border-blue-500/30 bg-blue-500/10 text-blue-300 hover:bg-blue-500/20"
+                                }`}
+                            >
+                                {isMuted ? (
+                                    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                                    </svg>
+                                ) : (
+                                    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-3.536-9.536a5 5 0 000 7.072M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                                    </svg>
+                                )}
+                            </button>
+
                             {(permissionError || submitError || connectionError) && (
                                 <p className="text-[11px] text-red-400 font-medium">
                                     {permissionError || submitError || connectionError}
